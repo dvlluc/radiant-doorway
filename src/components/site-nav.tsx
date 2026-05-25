@@ -1,9 +1,20 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 export function SiteNav() {
   const { user, signOut } = useAuth();
+  const { data: profile } = useQuery({
+    queryKey: ["profile-nav", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("account_type").eq("id", user!.id).maybeSingle();
+      return data;
+    },
+  });
+  const isBusiness = profile?.account_type === "business";
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -13,9 +24,14 @@ export function SiteNav() {
         <nav className="hidden items-center gap-8 text-sm md:flex">
           <Link to="/services" className="hover:opacity-60" activeProps={{ className: "underline underline-offset-4" }}>Services</Link>
           <Link to="/products" className="hover:opacity-60" activeProps={{ className: "underline underline-offset-4" }}>Shop</Link>
-          <Link to="/book" className="hover:opacity-60" activeProps={{ className: "underline underline-offset-4" }}>Book</Link>
-          {user && (
+          {!isBusiness && (
+            <Link to="/book" className="hover:opacity-60" activeProps={{ className: "underline underline-offset-4" }}>Book</Link>
+          )}
+          {user && !isBusiness && (
             <Link to="/account" className="hover:opacity-60" activeProps={{ className: "underline underline-offset-4" }}>Account</Link>
+          )}
+          {user && isBusiness && (
+            <Link to="/business" className="hover:opacity-60" activeProps={{ className: "underline underline-offset-4" }}>Dashboard</Link>
           )}
         </nav>
         <div className="flex items-center gap-2">

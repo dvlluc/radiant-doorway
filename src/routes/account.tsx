@@ -30,6 +30,10 @@ function AccountPage() {
     },
   });
 
+  useEffect(() => {
+    if (profile?.account_type === "business") navigate({ to: "/business" });
+  }, [profile, navigate]);
+
   const { data: bookings } = useQuery({
     queryKey: ["bookings", user?.id],
     enabled: !!user,
