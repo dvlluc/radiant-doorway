@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -16,7 +17,9 @@ export const Route = createFileRoute("/signup")({
 function SignupPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const [fullName, setFullName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,12 +30,19 @@ function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (accountType === "business" && !businessName.trim()) {
+      return toast.error("Business name is required.");
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: {
+          full_name: fullName,
+          account_type: accountType,
+          business_name: accountType === "business" ? businessName : null,
+        },
         emailRedirectTo: window.location.origin + "/account",
       },
     });
@@ -57,13 +67,40 @@ function SignupPage() {
         <div className="w-full max-w-sm">
           <Link to="/" className="font-serif text-2xl md:hidden">Maison Noir</Link>
           <h1 className="mt-6 font-serif text-4xl">Create account</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Save your details and book in seconds.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Choose how you want to use Maison Noir.</p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div className="mt-6 grid grid-cols-2 gap-2">
+            {(["individual", "business"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setAccountType(t)}
+                className={cn(
+                  "border px-4 py-3 text-left text-sm transition",
+                  accountType === t
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border hover:border-foreground"
+                )}
+              >
+                <div className="font-medium capitalize">{t}</div>
+                <div className="mt-1 text-xs opacity-70">
+                  {t === "individual" ? "Book treatments" : "Offer services"}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">Your name</Label>
               <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-1" />
             </div>
+            {accountType === "business" && (
+              <div>
+                <Label htmlFor="biz">Business name</Label>
+                <Input id="biz" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="mt-1" />
+              </div>
+            )}
             <div>
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1" />
@@ -80,6 +117,7 @@ function SignupPage() {
           </div>
 
           <Button variant="outline" className="w-full" onClick={handleGoogle}>Continue with Google</Button>
+          <p className="mt-3 text-center text-xs text-muted-foreground">Google sign-in creates an individual account.</p>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             Already have an account? <Link to="/login" className="underline underline-offset-4 text-foreground">Log in</Link>
