@@ -52,6 +52,38 @@ export type Database = {
           },
         ]
       }
+      business_vacations: {
+        Row: {
+          business_id: string
+          created_at: string
+          day: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          day: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          day?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_vacations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
@@ -84,7 +116,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
           avatar_url: string | null
+          business_name: string | null
           created_at: string
           full_name: string | null
           id: string
@@ -92,7 +126,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_type?: string
           avatar_url?: string | null
+          business_name?: string | null
           created_at?: string
           full_name?: string | null
           id: string
@@ -100,7 +136,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_type?: string
           avatar_url?: string | null
+          business_name?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
@@ -111,6 +149,7 @@ export type Database = {
       }
       services: {
         Row: {
+          business_id: string | null
           created_at: string
           description: string | null
           duration_minutes: number
@@ -120,6 +159,7 @@ export type Database = {
           price_cents: number
         }
         Insert: {
+          business_id?: string | null
           created_at?: string
           description?: string | null
           duration_minutes?: number
@@ -129,6 +169,7 @@ export type Database = {
           price_cents?: number
         }
         Update: {
+          business_id?: string | null
           created_at?: string
           description?: string | null
           duration_minutes?: number
@@ -137,7 +178,15 @@ export type Database = {
           name?: string
           price_cents?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
