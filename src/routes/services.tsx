@@ -9,16 +9,19 @@ export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
       { title: "Services — Maison Noir" },
-      { name: "description", content: "Browse our menu of signature facials, brows, lashes, nails and body treatments." },
+      { name: "description", content: "Browse signature treatments from our beauty businesses." },
     ],
   }),
 });
 
 function ServicesPage() {
   const { data, isLoading } = useQuery({
-    queryKey: ["services"],
+    queryKey: ["services-all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*").order("price_cents");
+      const { data, error } = await supabase
+        .from("services")
+        .select("*, profiles:business_id(business_name)")
+        .order("price_cents");
       if (error) throw error;
       return data;
     },
@@ -37,14 +40,17 @@ function ServicesPage() {
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
 
         <div className="divide-y divide-border border-y border-border">
-          {data?.map((s) => (
+          {data?.map((s: any) => (
             <article key={s.id} className="grid gap-6 py-8 md:grid-cols-[1fr_auto] md:items-center">
               <div>
                 <h2 className="font-serif text-3xl">{s.name}</h2>
+                {s.profiles?.business_name && (
+                  <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{s.profiles.business_name}</p>
+                )}
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{s.description}</p>
                 <p className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">{s.duration_minutes} min · ${(s.price_cents / 100).toFixed(0)}</p>
               </div>
-              <Link to="/book" search={{ serviceId: s.id }}>
+              <Link to="/book" search={{ businessId: s.business_id ?? undefined, serviceId: s.id }}>
                 <Button variant="outline">Book</Button>
               </Link>
             </article>
