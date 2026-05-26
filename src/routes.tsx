@@ -11,7 +11,6 @@ import {
   type RouteLayoutId,
 } from "./routes.config";
 
-
 const layoutShells: Record<RouteLayoutId, ReactElement> = {
   standalone: <RouteTransitionShell fullPage />,
   adminShell: <RouteTransitionShell fullPage />,
