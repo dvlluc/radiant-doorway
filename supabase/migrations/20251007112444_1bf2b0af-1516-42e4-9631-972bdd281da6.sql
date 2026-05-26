@@ -1,0 +1,3 @@
+-- Add category field to business_profiles table
+ALTER TABLE public.business_profiles
+ADD COLUMN IF NOT EXISTS category text;

@@ -1,0 +1,2 @@
+ALTER TABLE public.posts DROP CONSTRAINT posts_post_type_check;
+ALTER TABLE public.posts ADD CONSTRAINT posts_post_type_check CHECK (post_type = ANY (ARRAY['tip'::text, 'question'::text, 'video'::text, 'review'::text, 'post'::text, 'launch'::text, 'challenge'::text, 'tutorial'::text]));

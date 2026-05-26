@@ -1,0 +1,1 @@
+ALTER TABLE public.business_settings ADD COLUMN show_opening_hours boolean NOT NULL DEFAULT true;
