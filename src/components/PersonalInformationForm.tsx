@@ -7,15 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, User, Sparkles, Copy, Check } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Save, User, Copy, Check } from "lucide-react";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
 import {
   Select,
@@ -51,9 +43,6 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [bioLength, setBioLength] = useState(0);
-  const [showAiDialog, setShowAiDialog] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [generatingAvatar, setGeneratingAvatar] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [bookingLink, setBookingLink] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
@@ -361,72 +350,6 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
     }
   };
 
-  const handleGenerateAvatar = async () => {
-    if (!aiPrompt.trim()) {
-      toast({
-        title: "Prompt Required",
-        description: "Please enter a description for your avatar",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setGeneratingAvatar(true);
-    try {
-      // Call edge function to generate avatar
-      const { data, error } = await supabase.functions.invoke("generate-avatar", {
-        body: { prompt: aiPrompt }
-      });
-
-      if (error) throw error;
-
-      if (!data?.imageUrl) {
-        throw new Error("No image generated");
-      }
-
-      // Convert base64 to blob
-      const base64Response = await fetch(data.imageUrl);
-      const blob = await base64Response.blob();
-
-      // Upload to Supabase storage
-      const fileExt = "png";
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, blob, {
-          contentType: "image/png",
-          upsert: true
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-
-      // Update form data with new avatar URL
-      setFormData({ ...formData, avatarUrl: publicUrl });
-
-      toast({
-        title: "Avatar Generated!",
-        description: "Your AI-generated avatar is ready. Don't forget to save your changes."
-      });
-
-      setShowAiDialog(false);
-      setAiPrompt("");
-    } catch (error: any) {
-      console.error("Avatar generation error:", error);
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to generate avatar. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setGeneratingAvatar(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -524,16 +447,6 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
                   disabled={!isEditMode}
                 >
                   Choose File
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowAiDialog(true)}
-                  className="w-full"
-                  disabled={!isEditMode}
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate AI Avatar
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   JPG, PNG or GIF (Max 5MB)
@@ -744,61 +657,6 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
               </p>
             </div>
           )}
-
-          {/* AI Avatar Generation Dialog */}
-          <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Generate AI Avatar</DialogTitle>
-                <DialogDescription>
-                  Describe the avatar you'd like to generate. Be specific about style, colors, and details.
-                  <span className="block mt-2 text-xs text-green-600 font-medium">
-                    ✨ Free during promotional period (until Oct 6, 2025)
-                  </span>
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="aiPrompt">Avatar Description</Label>
-                  <Textarea
-                    id="aiPrompt"
-                    placeholder="Example: Professional headshot with glasses and a friendly smile, business casual attire, neutral background"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowAiDialog(false);
-                    setAiPrompt("");
-                  }}
-                  disabled={generatingAvatar}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleGenerateAvatar}
-                  disabled={generatingAvatar || !aiPrompt.trim()}
-                >
-                  {generatingAvatar ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           {/* Save Button */}
           {isEditMode && (

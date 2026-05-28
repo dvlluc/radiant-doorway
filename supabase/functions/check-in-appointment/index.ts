@@ -36,16 +36,15 @@ serve(async (req) => {
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { appointmentId, qrCode, checkIn } = await req.json();
-    
-    if (!appointmentId && !qrCode) {
-      throw new Error("Either appointment ID or QR code is required");
+    const { appointmentId, checkIn } = await req.json();
+
+    if (!appointmentId) {
+      throw new Error("Appointment ID is required");
     }
 
-    logStep("Looking up appointment", { appointmentId, qrCode });
+    logStep("Looking up appointment", { appointmentId });
 
-    // Build query based on what was provided
-    let query = supabaseClient
+    const { data: appointment, error: appointmentError } = await supabaseClient
       .from("appointments")
       .select(`
         *,
@@ -54,15 +53,9 @@ serve(async (req) => {
           last_name,
           email
         )
-      `);
-
-    if (qrCode) {
-      query = query.eq("qr_code", qrCode);
-    } else {
-      query = query.eq("id", appointmentId);
-    }
-
-    const { data: appointment, error: appointmentError } = await query.maybeSingle();
+      `)
+      .eq("id", appointmentId)
+      .maybeSingle();
 
     if (appointmentError || !appointment) {
       logStep("Appointment not found", { error: appointmentError });

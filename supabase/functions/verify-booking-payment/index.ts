@@ -95,7 +95,7 @@ serve(async (req) => {
         status: 'scheduled',
         color: '#10b981'
       })
-      .select('*, qr_code')
+      .select('*')
       .single();
 
     if (insertError || !appointment) {
@@ -103,7 +103,7 @@ serve(async (req) => {
       throw insertError;
     }
 
-    console.log("[VERIFY-BOOKING-PAYMENT] Appointment created successfully with QR:", appointment.qr_code);
+    console.log("[VERIFY-BOOKING-PAYMENT] Appointment created successfully:", appointment.id);
 
     // Get customer details
     const { data: customer } = await supabaseClient
@@ -154,12 +154,6 @@ serve(async (req) => {
               <p><strong>Duration:</strong> ${metadata.total_duration} minutes</p>
               <p><strong>Services:</strong> ${metadata.service_names}</p>
               <p><strong>Professional:</strong> ${staffFirstName}</p>
-            </div>
-
-            <div style="background-color: #fff; border: 2px solid #10b981; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <h3 style="color: #333;">Your Appointment QR Code</h3>
-              <p style="font-family: monospace; font-size: 16px; word-break: break-all; background: #f9fafb; padding: 15px; border-radius: 4px;">${appointment.qr_code}</p>
-              <p style="color: #666; font-size: 14px;">Present this QR code when you arrive for your appointment</p>
             </div>
 
             <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">

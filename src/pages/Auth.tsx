@@ -159,30 +159,64 @@ export default function Auth() {
     return signupBusinessSchema.parse(formData);
   };
 
+  const emailRedirectTo = `${window.location.origin}/`;
+
+  const registerUser = async (validatedData: z.infer<typeof signupIndividualSchema> | z.infer<typeof signupBusinessSchema>) => {
+    return supabase.auth.signUp({
+      email: validatedData.email,
+      password: validatedData.password,
+      options: {
+        emailRedirectTo,
+        data: {
+          first_name: accountType === "individual" ? firstName : undefined,
+          last_name: accountType === "individual" ? lastName : undefined,
+          display_name: displayName,
+          telephone: formatPhoneForTwilio(telephone),
+          account_type: accountType,
+          business_name: accountType === "business" ? businessName : undefined,
+          business_category: accountType === "business" ? businessCategory : undefined,
+        },
+      },
+    });
+  };
+
+  const sendSignupVerificationEmail = async (userEmail: string) => {
+    const confirmLink = `${window.location.origin}/auth?type=signup`;
+    await supabase.functions.invoke("send-signup-verification", {
+      body: { email: userEmail, confirmLink, redirectTo: emailRedirectTo },
+    });
+  };
+
+  const completeSignupFlow = () => {
+    toast({ title: "Success!", description: "Your account has been created. Please verify your email to continue." });
+    if (accountType !== "individual") {
+      const from = location.state?.from || "/directory";
+      navigate("/profile-completion", { state: { from } });
+    } else {
+      setIsSignUp(false);
+      setSignupStep(1);
+      setPassword("");
+      setConfirmPassword("");
+      setFirstName("");
+      setLastName("");
+      setDisplayName("");
+      setTelephone("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       if (isSignUp) {
-        const validatedData = validateSignupForm();
+        if (signupStep === 3) {
+          completeSignupFlow();
+          return;
+        }
 
-        const { data, error } = await supabase.auth.signUp({
-          email: validatedData.email,
-          password: validatedData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              first_name: accountType === "individual" ? firstName : undefined,
-              last_name: accountType === "individual" ? lastName : undefined,
-              display_name: displayName,
-              telephone: formatPhoneForTwilio(telephone),
-              account_type: accountType,
-              business_name: accountType === "business" ? businessName : undefined,
-              business_category: accountType === "business" ? businessCategory : undefined,
-            }
-          },
-        });
+        const validatedData = validateSignupForm();
+        const { data, error } = await registerUser(validatedData);
 
         if (error) {
           if (error.message.includes("already registered")) {
@@ -191,20 +225,12 @@ export default function Auth() {
             toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
           }
         } else if (data.user) {
-          toast({ title: "Success!", description: "Your account has been created." });
-          if (accountType !== "individual") {
-            const from = location.state?.from || "/directory";
-            navigate("/profile-completion", { state: { from } });
-          } else {
-            setIsSignUp(false);
-            setSignupStep(1);
-            setPassword("");
-            setConfirmPassword("");
-            setFirstName("");
-            setLastName("");
-            setDisplayName("");
-            setTelephone("");
+          try {
+            await sendSignupVerificationEmail(validatedData.email);
+          } catch (emailError) {
+            console.error("Error sending verification email:", emailError);
           }
+          completeSignupFlow();
         }
       } else {
         const validatedData = authSchema.parse({
@@ -235,15 +261,42 @@ export default function Auth() {
     }
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (isSignUp && signupStep === 2) {
+      setLoading(true);
       try {
-        validateSignupForm();
-        setSignupStep(3);
+        const validatedData = validateSignupForm();
+        const { data, error } = await registerUser(validatedData);
+
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({ title: "Account exists", description: "This email is already registered. Please sign in instead.", variant: "destructive" });
+          } else {
+            toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+          }
+          return;
+        }
+
+        if (data.user) {
+          try {
+            await sendSignupVerificationEmail(validatedData.email);
+            toast({ title: "Check your email", description: "We've sent a verification link to your inbox." });
+          } catch (emailError) {
+            console.error("Error sending verification email:", emailError);
+            toast({
+              title: "Verification email",
+              description: "Account created, but we couldn't send the verification email. Try again from the next step.",
+              variant: "destructive",
+            });
+          }
+          setSignupStep(3);
+        }
       } catch (error) {
         if (error instanceof z.ZodError) {
           toast({ title: "Validation error", description: error.errors[0].message, variant: "destructive" });
         }
+      } finally {
+        setLoading(false);
       }
       return;
     }
@@ -337,8 +390,8 @@ export default function Auth() {
           {loading ? "Please wait..." : "Create Account"}
         </Button>
       ) : (
-        <Button type="button" onClick={handleNextStep} className="flex-1 h-12 bg-foreground text-background hover:bg-foreground/90 font-medium">
-          Next
+        <Button type="button" onClick={handleNextStep} className="flex-1 h-12 bg-foreground text-background hover:bg-foreground/90 font-medium" disabled={loading}>
+          {loading ? "Please wait..." : "Next"}
         </Button>
       )}
     </div>
@@ -366,12 +419,12 @@ export default function Auth() {
               We'll send a verification link to <span className="font-medium text-foreground">{email || "your email"}</span>
             </p>
             <p className="text-xs text-muted-foreground">
-              You can verify your email now or after completing registration. Check your inbox for the verification link.
+              Check your inbox and click the verification link. You can finish registration below after confirming your email.
             </p>
           </div>
           <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground">
             <CheckCircle className="w-4 h-4 text-accent" />
-            <span>Verification email will be sent upon account creation</span>
+            <span>Verification email has been sent</span>
           </div>
         </div>
         {navButtons(true)}
