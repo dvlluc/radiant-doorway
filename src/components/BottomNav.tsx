@@ -6,7 +6,11 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 
-export function BottomNav() {
+interface BottomNavProps {
+  className?: string;
+}
+
+export function BottomNav({ className }: BottomNavProps) {
   const { user } = useAuth();
   const { data: profile } = useUserProfile(user?.id);
   const navigate = useNavigate();
@@ -35,7 +39,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background border-t border-border">
+      <nav className={cn("fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background border-t border-border", className)}>
         <div className="flex items-center justify-around h-14">
           {navItems.map((item) => (
             <NavLink

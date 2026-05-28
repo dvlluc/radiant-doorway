@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./contexts/AuthContext";
-import { Header } from "./components/Header";
+import { AppShell } from "./components/AppShell";
 import { MainLayout } from "./components/MainLayout";
 import { OrganizationStructuredData } from "./components/StructuredData";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -97,40 +97,26 @@ const App = () => (
               {/* Admin setup route - standalone */}
               <Route path="/admin-setup" element={<RouteShell><AdminSetup /></RouteShell>} />
 
-              {/* Account route - full page without main sidebar */}
-              <Route
-                path="/account"
-                element={
-                  <Suspense fallback={<ContentPlaceholder />}>
-                    <PageTransition>
-                      <div className="min-h-screen w-full bg-background">
-                        <Header />
-                        <main className="px-2 pt-[104px] pb-4 sm:px-4 md:px-8 md:pt-[118px] md:pb-8 overflow-x-hidden">
-                          <Account />
-                        </main>
-                      </div>
-                    </PageTransition>
-                  </Suspense>
-                }
-              />
-
               <Route path="/" element={<Navigate to="/explore-styles" replace />} />
 
-              {/* Main app routes — shared layout stays mounted */}
-              <Route element={<MainLayout />}>
-                <Route path="/directory" element={<Directory />} />
-                <Route path="/professional/:id" element={<ProfessionalProfile />} />
-                <Route path="/profile/:id" element={<ProfessionalProfile />} />
-                <Route path="/booking/:id" element={<Booking />} />
-                <Route path="/booking/:id/datetime" element={<BookingDateTime />} />
-                <Route path="/booking/:id/payment" element={<BookingPayment />} />
-                <Route path="/create-test-accounts" element={<CreateTestAccounts />} />
-                <Route path="/explore-styles" element={<ExploreStyles />} />
-                <Route path="/explore-styles/:id" element={<StyleDetail />} />
-                <Route path="/impact" element={<Impact />} />
-                <Route path="/bello-partnership" element={<BelloPartnership />} />
-                <Route path="/bellomart" element={<BelloMart />} />
-                <Route path="*" element={<NotFound />} />
+              {/* Main app routes — AppShell keeps header mounted; MainLayout handles nav chrome */}
+              <Route element={<AppShell />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/directory" element={<Directory />} />
+                  <Route path="/professional/:id" element={<ProfessionalProfile />} />
+                  <Route path="/profile/:id" element={<ProfessionalProfile />} />
+                  <Route path="/booking/:id" element={<Booking />} />
+                  <Route path="/booking/:id/datetime" element={<BookingDateTime />} />
+                  <Route path="/booking/:id/payment" element={<BookingPayment />} />
+                  <Route path="/create-test-accounts" element={<CreateTestAccounts />} />
+                  <Route path="/explore-styles" element={<ExploreStyles />} />
+                  <Route path="/explore-styles/:id" element={<StyleDetail />} />
+                  <Route path="/impact" element={<Impact />} />
+                  <Route path="/bello-partnership" element={<BelloPartnership />} />
+                  <Route path="/bellomart" element={<BelloMart />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
               </Route>
 
               <Route path="/booking/success" element={<RouteShell><BookingSuccess /></RouteShell>} />
