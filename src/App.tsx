@@ -110,7 +110,7 @@ const App = () => (
           
           
           {/* Main app routes with layout */}
-          <Route path="/" element={<Navigate to="/directory" replace />} />
+          <Route path="/" element={<Navigate to="/explore-styles" replace />} />
           
           <Route path="/directory" element={
             <MainLayout><Directory /></MainLayout>

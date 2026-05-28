@@ -13,8 +13,8 @@ export function BottomNav() {
   const [showMenu, setShowMenu] = useState(false);
 
   const navItems = [
-    { icon: Users, label: "Pros", path: "/directory" },
     { icon: Sparkles, label: "Styles", path: "/explore-styles" },
+    { icon: Users, label: "Pros", path: "/directory" },
     { icon: ShoppingBag, label: "Mart", path: "/bellomart" },
   ];
 

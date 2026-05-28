@@ -5,8 +5,8 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { Users, Sparkles, ShoppingBag, Bell, ChevronDown } from "lucide-react";
 
 const navItems = [
-  { icon: Users, label: "Professionals", path: "/directory" },
   { icon: Sparkles, label: "Explore Styles", path: "/explore-styles" },
+  { icon: Users, label: "Professionals", path: "/directory" },
   { icon: ShoppingBag, label: "BelloMart", path: "/bellomart" },
 ];
 

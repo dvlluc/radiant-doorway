@@ -56,7 +56,7 @@ export function Header() {
       </div>
       <header className="fixed top-0 md:top-[30px] left-0 right-0 h-14 bg-black text-white z-50 flex items-center justify-between px-4 md:px-6 py-1">
       <div className="flex items-center gap-2">
-        <Link to="/directory" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <Link to="/explore-styles" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
           {/* Icon only on mobile, full logo on larger screens */}
           <img 
             src={logoIcon} 

@@ -1,4 +1,4 @@
-import { Users, Sparkles, ChevronDown, Menu, X } from "lucide-react";
+import { Users, Sparkles, ShoppingBag, ChevronDown, Menu, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,9 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/s
 import { useState } from "react";
 
 const navItems = [
-  { icon: Users, label: "Professionals", path: "/directory" },
   { icon: Sparkles, label: "Explore Styles", path: "/explore-styles" },
+  { icon: Users, label: "Professionals", path: "/directory" },
+  { icon: ShoppingBag, label: "BelloMart", path: "/bellomart" },
 ];
 
 const footerLinks = [

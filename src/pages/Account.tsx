@@ -480,7 +480,7 @@ export default function Account() {
 
   const handleMenuClick = (section: MenuSection) => {
     if (section === "Home") {
-      navigate("/directory");
+      navigate("/explore-styles");
     } else {
       setActiveSection(section);
     }
