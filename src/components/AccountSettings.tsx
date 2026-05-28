@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,9 +21,6 @@ import {
 export function AccountSettings() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -112,62 +109,32 @@ export function AccountSettings() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  placeholder="Enter current password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="currentPassword"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                placeholder="Enter current password"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showNewPassword ? "text" : "password"}
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  placeholder="Enter new password (min 8 characters)"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="newPassword"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                placeholder="Enter new password (min 8 characters)"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  placeholder="Confirm new password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="confirmPassword"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                placeholder="Confirm new password"
+              />
             </div>
 
             <Button

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Briefcase, Eye, EyeOff, ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { User, Briefcase, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -110,8 +111,6 @@ export default function Auth() {
   const [country, setCountry] = useState("");
   const [businessCategory, setBusinessCategory] = useState("");
   const [businessOffering, setBusinessOffering] = useState<BusinessOffering>("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -296,21 +295,11 @@ export default function Auth() {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium">Password <span className="text-destructive">*</span></label>
-        <div className="relative">
-          <Input id="password" type={showPassword ? "text" : "password"} placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 pr-10" required disabled={loading} />
-          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
-            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
+        <PasswordInput id="password" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" required disabled={loading} />
       </div>
       <div className="space-y-2">
         <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password <span className="text-destructive">*</span></label>
-        <div className="relative">
-          <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 pr-10" required disabled={loading} />
-          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
-            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
+        <PasswordInput id="confirmPassword" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11" required disabled={loading} />
       </div>
       <p className="text-xs text-muted-foreground sm:col-span-2">Must be at least 6 characters</p>
     </div>
@@ -702,7 +691,7 @@ export default function Auth() {
                     <label htmlFor="password" className="text-sm font-medium">Password</label>
                     <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs text-accent hover:underline">Forgot password?</button>
                   </div>
-                  <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" required disabled={loading} />
+                  <PasswordInput id="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" required disabled={loading} />
                 </div>
               </div>
               <Button type="submit" className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-medium text-base rounded-md" disabled={loading}>
