@@ -479,8 +479,6 @@ export default function ProfessionalProfile() {
         fetchBusinessPhotos();
       } else if (activeTab === "Styles") {
         fetchBusinessPhotos();
-      } else if (activeTab === "Community") {
-        fetchProfilePosts();
       } else if (activeTab === "Team" || activeTab === "Professionals") {
         fetchTeamMembers();
     } else if (activeTab === "Services & Hours" || activeTab === "Services") {
@@ -698,7 +696,7 @@ export default function ProfessionalProfile() {
         
         const showHours = settingsData?.show_opening_hours !== false;
         const servicesTabName = showHours ? "Services & Hours" : "Services";
-        baseTabs = ["Styles", servicesTabName, "Team", "Store", "Reviews", "Community"];
+        baseTabs = ["Styles", servicesTabName, "Team", "Store", "Reviews"];
       } else {
         baseTabs = ["Posts", "Photos", "Videos", "Events", "Jobs"];
       }
@@ -1711,7 +1709,7 @@ export default function ProfessionalProfile() {
           <CardContent className="p-12 text-center">
             <h3 className="text-xl font-semibold mb-2">Profile Not Found</h3>
             <p className="text-muted-foreground mb-4">This profile doesn't exist or has been removed.</p>
-            <Button onClick={() => navigate("/directory")}>Browse professionals</Button>
+            <Button onClick={() => navigate("/directory")}>Go to Directory</Button>
           </CardContent>
         </Card>
       </div>
@@ -1758,7 +1756,7 @@ export default function ProfessionalProfile() {
           </Avatar>
           
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold font-['Playfair_Display'] truncate">{profile.displayName}</h1>
+            <h1 className="text-lg font-bold truncate">{profile.displayName}</h1>
             {profile.accountType !== "individual" && (
               <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-medium rounded-full bg-primary/10 text-primary capitalize">
                 {profile.accountType === "charitable_partner" ? "Charity" : profile.accountType}
@@ -1880,7 +1878,7 @@ export default function ProfessionalProfile() {
         <div className="flex-1 space-y-4 text-left w-full">
           <div className="flex flex-row items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold font-['Playfair_Display']">{profile.displayName}</h1>
+              <h1 className="text-2xl font-bold">{profile.displayName}</h1>
               <div className="flex justify-start gap-6 mt-2 text-sm">
                 <span><strong>{profile.followingCount}</strong> Following</span>
                 <span><strong>{profile.followersCount}</strong> Followers</span>
@@ -2723,92 +2721,6 @@ export default function ProfessionalProfile() {
           </Card>
         )}
 
-        {activeTab === "Community" && (
-          loadingPosts ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading community content...</p>
-            </div>
-          ) : posts.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No Community Content</h3>
-                <p className="text-muted-foreground">No posts from the live feed yet.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-              {posts.map((post) => (
-                <div 
-                  key={post.id} 
-                  className="group cursor-pointer"
-                  onClick={() => handlePostClick(post)}
-                >
-                  {/* Image */}
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-                    {post.video_url ? (
-                      <video 
-                        src={post.video_url} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        muted
-                        playsInline
-                      />
-                    ) : post.image_urls && post.image_urls.length > 0 ? (
-                      <>
-                        <img
-                          src={post.image_urls[0]}
-                          alt={post.content.substring(0, 50)}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                          style={{ imageRendering: '-webkit-optimize-contrast' }}
-                        />
-                        {post.image_urls.length > 1 && (
-                          <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-medium">
-                            +{post.image_urls.length - 1}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/60">
-                        <MessageSquare className="w-8 h-8 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info below image */}
-                  <div className="pt-2.5 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-foreground line-clamp-1 leading-tight">
-                        {post.content}
-                      </p>
-                      {post.post_type === 'review' && post.rating && (
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <Star className="w-3.5 h-3.5 fill-[#C1A46D] text-[#C1A46D]" />
-                          <span className="text-xs font-medium text-foreground">{post.rating.toFixed(1)}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {post.post_type && (
-                      <p className="text-xs text-muted-foreground capitalize">{post.post_type === 'tip' ? 'Pro Tip' : post.post_type}</p>
-                    )}
-
-                    <div className="flex items-center gap-3 text-muted-foreground text-xs pt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        {post.likes_count}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" />
-                        {post.comments_count}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        )}
       </div>
 
       {/* Share Dialog */}

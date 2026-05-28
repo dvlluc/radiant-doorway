@@ -277,7 +277,7 @@ export default function ProfileCompletion() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl bg-card rounded-xl border border-border/80 shadow-card p-8 space-y-8">
+      <div className="w-full max-w-2xl bg-card rounded-lg border border-border shadow-sm p-8 space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>Congratulations!</h1>
           <p className="text-muted-foreground">Your account was successfully created. Now, let's complete your profile</p>

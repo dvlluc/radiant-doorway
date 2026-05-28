@@ -3,7 +3,6 @@ import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { ReviewsDialog } from "@/components/ReviewsDialog";
 import { useState, useRef } from "react";
 import logoIcon from "@/assets/bellonecta-icon.jpg";
-import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface Business {
   id: string;
@@ -90,12 +89,12 @@ export default function FeaturedProfessionals({ businesses, loading, hasResults 
               className="cursor-pointer group flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[calc(25%-18px)]"
               onClick={() => navigate(`/professional/${business.user_id}`)}
             >
-              <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-muted shadow-card transition-shadow duration-300 group-hover:shadow-hover">
+              <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
                 {business.directory_photo || business.avatar_url ? (
-                  <OptimizedImage
-                    src={business.directory_photo || business.avatar_url || ""}
+                  <img
+                    src={business.directory_photo || business.avatar_url || ''}
                     alt={business.business_name}
-                    className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
                   />
                 ) : (

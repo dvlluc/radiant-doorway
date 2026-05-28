@@ -96,7 +96,7 @@ const Beta = () => {
             <div className="max-w-4xl mx-auto space-y-8">
               {/* Hero Section */}
               <div className="text-center space-y-4">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-full text-foreground">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent/10 rounded-full text-accent">
                   <Beaker className="w-5 h-5" />
                   <span className="font-semibold">Beta Program</span>
                 </div>
@@ -120,7 +120,7 @@ const Beta = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Rocket className="w-5 h-5 text-foreground" />
+                    <Rocket className="w-5 h-5 text-accent" />
                     About BelloNecta Beta
                   </CardTitle>
                 </CardHeader>
@@ -160,7 +160,7 @@ const Beta = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-foreground" />
+                    <MessageSquare className="w-5 h-5 text-accent" />
                     Share Your Feedback
                   </CardTitle>
                   <CardDescription>
@@ -254,12 +254,12 @@ const Beta = () => {
                 <CardContent className="space-y-2">
                   <p className="text-muted-foreground">
                     For technical support, billing questions, or general inquiries, visit our{" "}
-                    <Link to="/help" className="text-foreground hover:underline">Help Center</Link>.
+                    <Link to="/help" className="text-accent hover:underline">Help Center</Link>.
                   </p>
                   <p className="text-muted-foreground">
                     Review our{" "}
-                    <Link to="/terms" className="text-foreground hover:underline">Terms of Service</Link> and{" "}
-                    <Link to="/privacy" className="text-foreground hover:underline">Privacy Policy</Link>.
+                    <Link to="/terms" className="text-accent hover:underline">Terms of Service</Link> and{" "}
+                    <Link to="/privacy" className="text-accent hover:underline">Privacy Policy</Link>.
                   </p>
                 </CardContent>
               </Card>

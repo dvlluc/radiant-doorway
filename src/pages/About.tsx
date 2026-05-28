@@ -90,13 +90,13 @@ const About = () => {
             </p>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-2">
-            <div className="rounded-3xl border border-border/80 bg-card p-7 shadow-card">
+            <div className="rounded-3xl border border-border bg-card p-7 shadow-sm">
               <h3 className="text-xl font-semibold tracking-tight">Designed around creativity</h3>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
                 Traditional platforms are built around schedules. We are built around the work — the artistry, the detail, and the professionals behind it.
               </p>
             </div>
-            <div className="rounded-3xl border border-border/80 bg-card p-7 shadow-card">
+            <div className="rounded-3xl border border-border bg-card p-7 shadow-sm">
               <h3 className="text-xl font-semibold tracking-tight">A platform with broader ambition</h3>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
                 Our long-term vision extends beyond appointments into community, commerce, education, and innovation across the beauty industry.
@@ -118,7 +118,7 @@ const About = () => {
             </div>
             <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {ecosystemItems.map((item) => (
-                <div key={item.title} className="rounded-3xl border border-border/80 bg-card p-7 shadow-card">
+                <div key={item.title} className="rounded-3xl border border-border bg-card p-7 shadow-sm">
                   <h3 className="text-xl font-semibold tracking-tight">{item.title}</h3>
                   <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.text}</p>
                 </div>

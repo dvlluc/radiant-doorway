@@ -73,8 +73,12 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto z-50">
-        {notifications.length === 0 ? (
+      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+        {!userId ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">
+            Please sign in to view notifications
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             No notifications
           </div>

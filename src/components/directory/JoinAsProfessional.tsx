@@ -9,6 +9,7 @@ import {
   Sparkles,
   BookOpen,
   Bell,
+  MessageCircle,
   BarChart3,
   CreditCard,
   Users,
@@ -24,6 +25,7 @@ const features = [
   { icon: Sparkles, label: "Explore Trending Styles" },
   { icon: BookOpen, label: "Book Directly from Style Inspiration" },
   { icon: Bell, label: "Appointment Reminders" },
+  { icon: MessageCircle, label: "In-App Messaging" },
   { icon: BarChart3, label: "Business Analytics" },
   { icon: Users, label: "Networking" },
 ];

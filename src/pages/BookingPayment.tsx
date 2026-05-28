@@ -383,7 +383,7 @@ export default function BookingPayment() {
               )}
             </div>
 
-            <div className="bg-muted border border-border rounded-xl p-3 text-xs text-muted-foreground space-y-2 shadow-sm">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700 space-y-2">
               {depositRequired ? (
                 <>
                   <p className="font-semibold">💳 Deposit Required</p>
@@ -409,7 +409,7 @@ export default function BookingPayment() {
                 <h3 className="font-bold text-lg mb-2">
                   SUPPORT OUR CHARITABLE PARTNERS (COMING SOON)
                 </h3>
-                <div className="bg-muted border border-border p-4 rounded-xl mb-3 shadow-sm">
+                <div className="bg-accent p-4 rounded-lg mb-3">
                   <p className="text-sm mb-2">
                     Add a donation to support a charitable cause or sustainable beauty
                   </p>
@@ -441,32 +441,32 @@ export default function BookingPayment() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {depositRequired ? (
-                <div className="bg-muted border border-border rounded-xl p-4 shadow-sm">
-                  <h4 className="font-semibold text-foreground mb-2">💳 Deposit charged today</h4>
-                  <p className="text-sm text-muted-foreground">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-amber-900 mb-2">💳 Deposit charged today</h4>
+                  <p className="text-sm text-amber-700">
                     A <strong>{currency.symbol}{dueNow.toFixed(2)}</strong> deposit (including service & processing fees) will be charged to your card now to secure your booking. The remaining <strong>{currency.symbol}{remainingBalance.toFixed(2)}</strong> is paid at the venue.
                   </p>
                 </div>
               ) : (
-                <div className="bg-muted border border-border rounded-xl p-4 shadow-sm">
-                  <h4 className="font-semibold text-foreground mb-2">⚠️ Authorization Hold Only</h4>
-                  <p className="text-sm text-muted-foreground">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-amber-900 mb-2">⚠️ Authorization Hold Only</h4>
+                  <p className="text-sm text-amber-700">
                     We will place an authorization hold on your card to secure your booking.
                     <strong> You will NOT be charged now.</strong> Payment is made in full at the venue after your service.
                   </p>
                 </div>
               )}
 
-              <div className="bg-muted border border-border rounded-xl p-4 shadow-sm">
-                <h4 className="font-semibold text-foreground mb-2">💳 Secure Stripe Checkout</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">💳 Secure Stripe Checkout</h4>
+                <p className="text-sm text-blue-700">
                   Your card details are securely processed through Stripe with bank-level encryption.
                 </p>
               </div>
 
-              <div className="bg-muted border border-border rounded-xl p-4 shadow-sm">
-                <h4 className="font-semibold text-foreground mb-2">✓ What happens next?</h4>
-                <ul className="text-sm text-muted-foreground space-y-2">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-semibold text-green-900 mb-2">✓ What happens next?</h4>
+                <ul className="text-sm text-green-700 space-y-2">
                   <li>1. You'll be redirected to Stripe's secure page</li>
                   <li>2. {depositRequired ? "Pay the deposit to confirm your booking" : "Enter your card details (authorization only - no charge)"}</li>
                   <li>3. Receive booking confirmation</li>

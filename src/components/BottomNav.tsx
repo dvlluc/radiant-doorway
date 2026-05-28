@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { preloadRoute } from "@/lib/routePreload";
 
 export function BottomNav() {
   const { user } = useAuth();
@@ -36,29 +35,29 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-md border-t border-border/80 shadow-[0_-6px_24px_hsla(0,0%,0%,0.06)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background border-t border-border">
         <div className="flex items-center justify-around h-14">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              onMouseEnter={() => preloadRoute(item.path)}
               className={({ isActive }) =>
                 cn(
                   "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors",
-                  isActive ? "text-foreground font-semibold" : "text-muted-foreground"
+                  isActive ? "text-accent" : "text-muted-foreground"
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <item.icon className={cn("w-5 h-5", isActive ? "text-foreground" : "text-muted-foreground")} />
+                  <item.icon className={cn("w-5 h-5", isActive ? "text-accent" : "text-muted-foreground")} />
                   <span className="text-[10px] font-medium">{item.label}</span>
                 </>
               )}
             </NavLink>
           ))}
 
+          {/* My Profile button */}
           <button
             onClick={() => {
               if (!user) {
@@ -69,18 +68,21 @@ export function BottomNav() {
             }}
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 flex-1 h-14 transition-colors",
-              showMenu ? "text-foreground font-semibold" : "text-muted-foreground"
+              showMenu ? "text-accent" : "text-muted-foreground"
             )}
           >
             <User className="w-5 h-5" />
             <span className="text-[10px] font-medium">My Profile</span>
           </button>
         </div>
+        {/* Safe area for iOS */}
         <div className="h-[env(safe-area-inset-bottom)]" />
       </nav>
 
+      {/* Full-screen profile menu */}
       {showMenu && user && (
         <div className="fixed inset-0 z-[60] md:hidden bg-background animate-in slide-in-from-bottom duration-300 flex flex-col">
+          {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-border">
             <h2 className="text-lg font-semibold text-foreground">My Profile</h2>
             <button onClick={() => setShowMenu(false)} className="p-2 rounded-full hover:bg-muted transition-colors">
@@ -88,6 +90,7 @@ export function BottomNav() {
             </button>
           </div>
 
+          {/* User info card */}
           <button
             onClick={() => { setShowMenu(false); navigate(`/professional/${user.id}`); }}
             className="mx-4 mt-4 p-4 rounded-xl border border-border bg-muted/30 flex items-center gap-3 text-left hover:bg-muted/50 transition-colors"
@@ -106,6 +109,7 @@ export function BottomNav() {
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
 
+          {/* Menu items */}
           <div className="mt-4 mx-4 rounded-xl border border-border overflow-hidden">
             <button
               onClick={() => { setShowMenu(false); navigate("/account"); }}
@@ -126,6 +130,7 @@ export function BottomNav() {
             </button>
           </div>
 
+          {/* Sign out */}
           <div className="mt-4 mx-4 rounded-xl border border-border overflow-hidden">
             <button
               onClick={handleSignOut}

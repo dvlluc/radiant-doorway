@@ -52,7 +52,8 @@ export function useUserStats(userId: string | undefined) {
       };
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes for stats
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchInterval: 60 * 1000, // Refetch every minute for real-time feel
   });
 }

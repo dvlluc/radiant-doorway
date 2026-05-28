@@ -81,8 +81,8 @@ const Help = () => {
             <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="pt-8 pb-6 flex flex-col h-full">
                 <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                    <WhatsAppIcon className="w-8 h-8 text-foreground" />
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <WhatsAppIcon className="w-8 h-8 text-green-600" />
                   </div>
                 </div>
                 <h3 className="text-xl font-semibold mb-2">WhatsApp Support</h3>
@@ -145,22 +145,22 @@ const Help = () => {
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <WhatsAppIcon className="w-5 h-5 text-foreground" />
+                    <WhatsAppIcon className="w-5 h-5 text-green-600" />
                     <h3 className="text-xl font-semibold">WhatsApp Support</h3>
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="ml-2 bg-green-500/10 text-green-600">
                       Online
                     </Badge>
                   </div>
                   <div className="text-center py-8 space-y-4">
-                    <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto">
-                      <WhatsAppIcon className="w-10 h-10 text-foreground" />
+                    <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                      <WhatsAppIcon className="w-10 h-10 text-green-600" />
                     </div>
                     <h4 className="text-lg font-semibold">Chat with us on WhatsApp</h4>
                     <p className="text-muted-foreground max-w-md mx-auto">
                       Get quick support by messaging us directly on WhatsApp. Our team is ready to help you with any questions.
                     </p>
                     <Button
-                      className="gap-2"
+                      className="bg-green-600 hover:bg-green-700 text-white gap-2"
                       onClick={() => window.open("https://wa.me/13025389413", "_blank")}
                     >
                       <WhatsAppIcon className="w-4 h-4" />

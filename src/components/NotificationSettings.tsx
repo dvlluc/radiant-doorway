@@ -15,7 +15,7 @@ export function NotificationSettings() {
     {
       id: "email",
       title: "Email Notifications",
-      description: "Receive updates about bookings and account activity",
+      description: "Receive updates about bookings and messages",
       enabled: true
     },
     {

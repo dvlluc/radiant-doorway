@@ -9,8 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSmartBack } from "@/hooks/useSmartBack";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { OptimizedImage } from "@/components/OptimizedImage";
 
 interface Service {
   id: string;
@@ -314,11 +312,11 @@ export default function Booking() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12 space-y-6 animate-fade-in">
-        <Skeleton className="h-8 w-48 rounded-lg" />
-        <Skeleton className="h-32 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
+      <div className="max-w-2xl mx-auto px-4 py-12 space-y-6">
+        <div className="h-8 w-48 bg-muted rounded-lg animate-pulse" />
+        <div className="h-32 bg-muted rounded-2xl animate-pulse" />
+        <div className="h-24 bg-muted rounded-2xl animate-pulse" />
+        <div className="h-24 bg-muted rounded-2xl animate-pulse" />
       </div>
     );
   }
@@ -347,7 +345,7 @@ export default function Booking() {
       >
         {service.discount_active && service.discount_percentage && (
           <div className="absolute -top-2.5 right-3">
-            <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 gap-1">
+            <Badge className="bg-accent text-accent-foreground text-[10px] px-2 py-0.5 gap-1">
               <BadgePercent className="w-3 h-3" />
               {service.discount_percentage}% OFF
             </Badge>
@@ -377,7 +375,7 @@ export default function Booking() {
                   <span className="text-xs text-muted-foreground line-through">
                     {currency.symbol}{Number(service.original_price).toFixed(0)}
                   </span>
-                  <span className="text-lg font-bold text-foreground">
+                  <span className="text-lg font-bold text-accent">
                     {currency.symbol}{Number(service.price).toFixed(0)}
                   </span>
                 </div>
@@ -420,7 +418,7 @@ export default function Booking() {
 
       {/* Business Hero Card */}
       <div
-        className="relative rounded-2xl overflow-hidden bg-card text-foreground border border-border/80 p-5 mb-6 cursor-pointer active:scale-[0.99] transition-all shadow-card hover:shadow-hover"
+        className="relative rounded-2xl overflow-hidden bg-card text-foreground border border-border p-5 mb-6 cursor-pointer active:scale-[0.99] transition-transform shadow-sm"
         onClick={() => navigate(`/professional/${resolvedId}`)}
       >
         <div className="flex items-center gap-4">
@@ -504,14 +502,8 @@ export default function Booking() {
               }`}>
                 <div className="flex items-start gap-3">
                   {stylePhoto && (
-                    <div className="w-16 h-16 shrink-0">
-                      <OptimizedImage
-                        src={stylePhoto}
-                        alt={styleName}
-                        rounded="lg"
-                        className="h-16 w-16"
-                        loading="lazy"
-                      />
+                    <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                      <img src={stylePhoto} alt={styleName} className="w-full h-full object-cover" />
                     </div>
                   )}
 

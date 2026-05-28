@@ -157,7 +157,7 @@ const ListYourBusiness = () => {
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 md:py-32">
           <div className="max-w-2xl">
-            <p className="text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-white/70 mb-5">
+            <p className="text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-amber-300 mb-5">
               For Beauty Professionals
             </p>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-playfair font-bold text-white leading-tight mb-6">
@@ -170,7 +170,7 @@ const ListYourBusiness = () => {
               <Button
                 asChild
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white border-0 px-8 py-6 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0 px-8 py-6 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all"
               >
                 <Link to="/auth" state={{ mode: "signup" }}>
                   Join Now
@@ -204,8 +204,8 @@ const ListYourBusiness = () => {
                 className="group border border-border/50 bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-default"
               >
                 <CardContent className="p-8 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-muted to-secondary flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <benefit.icon className="w-7 h-7 text-foreground" />
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <benefit.icon className="w-7 h-7 text-amber-600" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-3">{benefit.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">{benefit.description}</p>
@@ -218,9 +218,9 @@ const ListYourBusiness = () => {
 
       {/* Inspiration to Booking */}
       <section className="py-20 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-muted via-background to-muted" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-50 via-white to-amber-50" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-300 to-transparent" />
         <div className="relative max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground text-center mb-6">
             From inspiration to booking in one step
@@ -231,10 +231,10 @@ const ListYourBusiness = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-4xl mx-auto mt-12">
             {["Clear pricing", "Real-time availability", "Seamless booking experience"].map((item, i) => (
               <div key={item} className="flex flex-col items-center text-center">
-                <span className="font-playfair text-3xl md:text-4xl font-bold text-foreground mb-3">
+                <span className="font-playfair text-3xl md:text-4xl font-bold text-amber-600 mb-3">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div className="w-10 h-px bg-border mb-4" />
+                <div className="w-10 h-px bg-amber-300 mb-4" />
                 <p className="text-foreground text-base font-medium">{item}</p>
               </div>
             ))}
@@ -252,7 +252,7 @@ const ListYourBusiness = () => {
             <div className="bg-card border border-border/50 rounded-2xl p-10 md:p-14 text-center shadow-sm">
               <div className="flex justify-center gap-1 mb-6">
                 {Array.from({ length: testimonials[currentTestimonial].rating }).map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-foreground fill-foreground" />
+                  <Star key={i} className="w-5 h-5 text-amber-500 fill-amber-500" />
                 ))}
               </div>
               <p className="text-xl md:text-2xl text-foreground font-playfair italic leading-relaxed mb-8">
@@ -276,7 +276,7 @@ const ListYourBusiness = () => {
                 <button
                   key={i}
                   className={`w-2.5 h-2.5 rounded-full transition-all ${
-                    i === currentTestimonial ? "bg-foreground w-8" : "bg-border"
+                    i === currentTestimonial ? "bg-amber-500 w-8" : "bg-border"
                   }`}
                   onClick={() => setCurrentTestimonial(i)}
                 />
@@ -306,14 +306,14 @@ const ListYourBusiness = () => {
 
           {/* Progress bar */}
           <div className="hidden md:block max-w-3xl mx-auto mb-16">
-            <div className="h-1 rounded-full bg-gradient-to-r from-border via-muted-foreground/40 to-foreground/50 opacity-60" />
+            <div className="h-1 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 opacity-60" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {steps.map((step, index) => (
               <div key={index} className="text-center group">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-secondary flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl font-bold text-foreground">{index + 1}</span>
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-2xl font-bold text-amber-600">{index + 1}</span>
                 </div>
                 <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{step.description}</p>
@@ -340,8 +340,8 @@ const ListYourBusiness = () => {
                 {["One-tap booking", "Automated reminders", "Secure payments", "Post-visit reviews"].map(
                   (item) => (
                     <li key={item} className="flex items-center gap-3 text-foreground">
-                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-foreground" />
+                      <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
                       </div>
                       {item}
                     </li>
@@ -375,8 +375,8 @@ const ListYourBusiness = () => {
                 {["Real-time analytics", "Team management", "Revenue tracking", "Client insights"].map(
                   (item) => (
                     <li key={item} className="flex items-center gap-3 text-foreground">
-                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-foreground" />
+                      <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
                       </div>
                       {item}
                     </li>
@@ -438,7 +438,7 @@ const ListYourBusiness = () => {
           <Button
             asChild
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-white px-10 py-6 text-lg font-semibold rounded-lg shadow-xl hover:shadow-2xl transition-all"
+            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-10 py-6 text-lg font-semibold rounded-lg shadow-xl hover:shadow-2xl transition-all"
           >
             <Link to="/auth" state={{ mode: "signup" }}>Join BelloNecta Now</Link>
           </Button>
@@ -462,7 +462,6 @@ const ListYourBusiness = () => {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/help" className="text-background/70 hover:text-background transition-colors">Help Centre</Link></li>
                 <li><Link to="/help" className="text-background/70 hover:text-background transition-colors">Contact Us</Link></li>
-                <li><Link to="/community" className="text-background/70 hover:text-background transition-colors">Community</Link></li>
               </ul>
             </div>
             <div>

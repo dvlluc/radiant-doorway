@@ -1,4 +1,4 @@
-import { Users, Sparkles, ShoppingBag, ChevronDown, Menu, X } from "lucide-react";
+import { Users, Sparkles, ChevronDown, Menu, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { useState } from "react";
 const navItems = [
   { icon: Users, label: "Professionals", path: "/directory" },
   { icon: Sparkles, label: "Explore Styles", path: "/explore-styles" },
-  { icon: ShoppingBag, label: "BelloMart", path: "/bellomart" },
 ];
 
 const footerLinks = [
@@ -19,25 +18,30 @@ const footerLinks = [
     { label: "Privacy", path: "/terms?tab=privacy" },
   ],
   [
-    { label: "Community", path: "/terms?tab=community" },
     { label: "Refund", path: "/terms?tab=refund" },
     { label: "Beta", path: "/beta" }
   ]
 ];
 
-export function MobileNav() {
+interface MobileNavProps {
+  trigger?: React.ReactNode;
+}
+
+export function MobileNav({ trigger }: MobileNavProps = {}) {
   const [open, setOpen] = useState(false);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="md:hidden text-white hover:bg-white/10"
-        >
-          <Menu className="w-6 h-6" />
-        </Button>
+        {trigger ?? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-white hover:bg-white/10"
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+        )}
       </SheetTrigger>
       <SheetContent side="left" className="w-72 p-0 bg-background">
         <div className="flex flex-col h-full">
@@ -60,14 +64,14 @@ export function MobileNav() {
                   cn(
                     "flex items-center gap-4 px-4 py-3 rounded-lg transition-colors",
                     "hover:bg-muted/70",
-                    isActive && "text-foreground font-semibold bg-muted shadow-sm"
+                    isActive && "text-accent bg-muted/50"
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
                     <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                      <item.icon className="w-4 h-4 text-white" />
+                      <item.icon className={cn("w-4 h-4", isActive ? "text-accent" : "text-white")} />
                     </div>
                     <span className="font-medium">{item.label}</span>
                   </>
@@ -82,20 +86,19 @@ export function MobileNav() {
                 cn(
                   "flex items-center gap-4 px-4 py-3 rounded-lg transition-colors",
                   "hover:bg-muted/70",
-                  isActive && "text-foreground font-semibold bg-muted shadow-sm"
+                  isActive && "text-accent bg-muted/50"
                 )
               }
             >
               {({ isActive }) => (
                 <>
                   <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                    <ChevronDown className="w-4 h-4 text-white" />
+                    <ChevronDown className={cn("w-4 h-4", isActive ? "text-accent" : "text-white")} />
                   </div>
                   <span className="font-medium">Impact</span>
                 </>
               )}
             </NavLink>
-            
           </nav>
           
           <div className="p-4 space-y-2 text-xs text-muted-foreground border-t border-border">

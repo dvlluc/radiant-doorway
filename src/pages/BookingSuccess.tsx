@@ -106,12 +106,12 @@ export default function BookingSuccess() {
           </>
         ) : (
           <>
-            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-foreground" />
+            <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-600" />
             <h1 className="text-2xl font-bold mb-2">Booking Confirmed!</h1>
             <p className="text-muted-foreground mb-2">
               Your card has been authorized and your appointment is secured.
             </p>
-            <div className="bg-muted border border-border rounded-xl p-3 mb-6 text-sm text-muted-foreground shadow-sm">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm text-blue-700">
               <p className="font-semibold mb-1">💳 Payment at Venue</p>
               <p>Your card authorization ensures your booking. You'll pay at the venue after your service. The hold is only captured for late cancellations or no-shows.</p>
             </div>

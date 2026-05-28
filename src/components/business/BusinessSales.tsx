@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, MoreVertical, Trash2, Search, RefreshCw, Download } from "lucide-react";
 import { formatDate } from "@/utils/dateFormat";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { BusinessAnalytics } from "./BusinessAnalytics";
 
@@ -40,6 +41,7 @@ interface BookingSale {
 
 export const BusinessSales = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [eventSales, setEventSales] = useState<EventSale[]>([]);
   const [bookingSales, setBookingSales] = useState<BookingSale[]>([]);

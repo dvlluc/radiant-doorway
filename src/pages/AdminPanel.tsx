@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, ShieldAlert, BarChart3, Settings, Calendar } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2, Users, FileText, ShieldAlert, BarChart3, Settings, Calendar } from "lucide-react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminPosts } from "@/components/admin/AdminPosts";
@@ -81,8 +80,8 @@ export default function AdminPanel() {
 
   if (authLoading || checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <Spinner />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -93,7 +92,7 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b shadow-sm">
+      <div className="border-b">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-3xl font-bold">Admin Panel</h1>
           <p className="text-muted-foreground">Manage your platform</p>

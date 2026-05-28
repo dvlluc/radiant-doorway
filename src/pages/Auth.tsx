@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -11,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Heart, User, Briefcase, HeartHandshake, ArrowLeft, Mail, CheckCircle } from "lucide-react";
+import { User, Briefcase, Eye, EyeOff, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -30,8 +29,6 @@ const authSchema = z.object({
   telephone: z.string().trim().optional(),
   brandName: z.string().trim().optional(),
   businessName: z.string().trim().optional(),
-  organizationName: z.string().trim().optional(),
-  registrationNumber: z.string().trim().optional(),
   website: z.string().trim().optional(),
   streetAddress: z.string().trim().optional(),
   city: z.string().trim().optional(),
@@ -48,7 +45,7 @@ const authSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AccountType = "individual" | "brand" | "business" | "charitable_partner";
+type AccountType = "individual" | "brand" | "business";
 type BusinessOffering = "" | "product" | "services" | "both";
 
 const businessCategories = [
@@ -71,12 +68,6 @@ const accountTypes = [
     title: "Business",
     description: "Showcase products, manage services, or both",
   },
-  {
-    value: "charitable_partner" as AccountType,
-    icon: HeartHandshake,
-    title: "Charitable Partner",
-    description: "Partner with us to support charitable causes",
-  },
 ];
 
 // Helper: progress dots
@@ -86,7 +77,7 @@ function ProgressDots({ current, total }: { current: number; total: number }) {
       {Array.from({ length: total }, (_, i) => (
         <div
           key={i}
-          className={cn("w-2 h-2 rounded-full", i + 1 === current ? "bg-primary" : "bg-border")}
+          className={cn("w-2 h-2 rounded-full", i + 1 === current ? "bg-accent" : "bg-border")}
         />
       ))}
     </div>
@@ -111,8 +102,6 @@ export default function Auth() {
   const [telephone, setTelephone] = useState("");
   const [brandName, setBrandName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
-  const [registrationNumber, setRegistrationNumber] = useState("");
   const [website, setWebsite] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
@@ -121,6 +110,8 @@ export default function Auth() {
   const [country, setCountry] = useState("");
   const [businessCategory, setBusinessCategory] = useState("");
   const [businessOffering, setBusinessOffering] = useState<BusinessOffering>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -158,8 +149,6 @@ export default function Auth() {
         telephone: isSignUp ? telephone : undefined,
         brandName: isSignUp && accountType === "brand" ? brandName : undefined,
         businessName: isSignUp && accountType === "business" ? businessName : undefined,
-        organizationName: isSignUp && accountType === "charitable_partner" ? organizationName : undefined,
-        registrationNumber: isSignUp && accountType === "charitable_partner" ? registrationNumber : undefined,
         website: isSignUp && accountType !== "individual" ? website : undefined,
         streetAddress: isSignUp && accountType !== "individual" ? streetAddress : undefined,
         city: isSignUp && accountType !== "individual" ? city : undefined,
@@ -183,8 +172,6 @@ export default function Auth() {
               brand_name: accountType === "brand" ? brandName : undefined,
               business_name: accountType === "business" ? businessName : undefined,
               business_category: accountType === "business" ? businessCategory : undefined,
-              organization_name: accountType === "charitable_partner" ? organizationName : undefined,
-              registration_number: accountType === "charitable_partner" ? registrationNumber : undefined,
               website: accountType !== "individual" ? website : undefined,
               street_address: accountType !== "individual" ? streetAddress : undefined,
               city: accountType !== "individual" ? city : undefined,
@@ -217,7 +204,7 @@ export default function Auth() {
             setTelephone("");
           }
           setBrandName(""); setBusinessName(""); setBusinessCategory("");
-          setOrganizationName(""); setRegistrationNumber(""); setWebsite("");
+          setWebsite("");
           setStreetAddress(""); setCity(""); setState(""); setZipCode(""); setCountry("");
         }
       } else {
@@ -298,7 +285,7 @@ export default function Auth() {
   const signInLink = (
     <div className="text-center text-sm">
       <span className="text-muted-foreground">Already have an account? </span>
-      <button type="button" onClick={() => { setIsSignUp(false); setSignupStep(1); }} className="text-foreground hover:underline font-medium">
+      <button type="button" onClick={() => { setIsSignUp(false); setSignupStep(1); }} className="text-accent hover:underline font-medium">
         Sign in here
       </button>
     </div>
@@ -309,27 +296,21 @@ export default function Auth() {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-medium">Password <span className="text-destructive">*</span></label>
-        <PasswordInput
-          id="password"
-          placeholder="Create a password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="h-11"
-          required
-          disabled={loading}
-        />
+        <div className="relative">
+          <Input id="password" type={showPassword ? "text" : "password"} placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 pr-10" required disabled={loading} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
       <div className="space-y-2">
         <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password <span className="text-destructive">*</span></label>
-        <PasswordInput
-          id="confirmPassword"
-          placeholder="Confirm your password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className="h-11"
-          required
-          disabled={loading}
-        />
+        <div className="relative">
+          <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 pr-10" required disabled={loading} />
+          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" disabled={loading}>
+            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground sm:col-span-2">Must be at least 6 characters</p>
     </div>
@@ -416,8 +397,8 @@ export default function Auth() {
       {stepHeader("Email Verification")}
       <div className="space-y-5">
         <div className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-            <Mail className="w-8 h-8 text-foreground" />
+          <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+            <Mail className="w-8 h-8 text-accent" />
           </div>
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
@@ -428,7 +409,7 @@ export default function Auth() {
             </p>
           </div>
           <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground">
-            <CheckCircle className="w-4 h-4 text-foreground" />
+            <CheckCircle className="w-4 h-4 text-accent" />
             <span>Verification email will be sent upon account creation</span>
           </div>
         </div>
@@ -590,65 +571,12 @@ export default function Auth() {
     return null;
   };
 
-  // --- Render Charity sign-up steps ---
-  const renderCharitySteps = () => {
-    if (signupStep === 2) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Contact & Security")}
-          <div className="space-y-5">
-            {contactFields}
-            {passwordFields}
-            {navButtons(false)}
-          </div>
-          {signInLink}
-        </div>
-      );
-    }
-    if (signupStep === 3) {
-      return emailVerificationStep;
-    }
-    if (signupStep === 4) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Organization Information")}
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="organizationName" className="text-sm font-medium">Organization Name <span className="text-destructive">*</span></label>
-              <Input id="organizationName" type="text" placeholder="Enter organization name" value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} className="h-11" required disabled={loading} />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="registrationNumber" className="text-sm font-medium">Registration Number <span className="text-destructive">*</span></label>
-              <Input id="registrationNumber" type="text" placeholder="Enter charity registration number" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} className="h-11" required disabled={loading} />
-            </div>
-            {navButtons(false)}
-          </div>
-          {signInLink}
-        </div>
-      );
-    }
-    if (signupStep === 5) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Address Details")}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {addressFields}
-            {navButtons(true)}
-          </form>
-          {signInLink}
-        </div>
-      );
-    }
-    return null;
-  };
-
   // --- Render sign-up form steps based on account type ---
   const renderSignupFormSteps = () => {
     switch (accountType) {
       case "individual": return renderIndividualSteps();
       case "brand": return renderBrandSteps();
       case "business": return renderBusinessSteps();
-      case "charitable_partner": return renderCharitySteps();
       default: return null;
     }
   };
@@ -723,7 +651,7 @@ export default function Auth() {
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Already have an account? </span>
-              <button type="button" onClick={() => setIsSignUp(false)} className="text-foreground hover:underline font-medium">
+              <button type="button" onClick={() => setIsSignUp(false)} className="text-accent hover:underline font-medium">
                 Sign in here
               </button>
             </div>
@@ -748,7 +676,7 @@ export default function Auth() {
             </form>
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Remember your password? </span>
-              <button type="button" onClick={() => { setIsForgotPassword(false); setEmail(""); }} className="text-foreground hover:underline font-medium">
+              <button type="button" onClick={() => { setIsForgotPassword(false); setEmail(""); }} className="text-accent hover:underline font-medium">
                 Sign in here
               </button>
             </div>
@@ -772,17 +700,9 @@ export default function Auth() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label htmlFor="password" className="text-sm font-medium">Password</label>
-                    <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs text-foreground hover:underline">Forgot password?</button>
+                    <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs text-accent hover:underline">Forgot password?</button>
                   </div>
-                  <PasswordInput
-                    id="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-11"
-                    required
-                    disabled={loading}
-                  />
+                  <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" required disabled={loading} />
                 </div>
               </div>
               <Button type="submit" className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-medium text-base rounded-md" disabled={loading}>
@@ -791,7 +711,7 @@ export default function Auth() {
             </form>
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
-              <button type="button" onClick={() => { setIsSignUp(true); setSignupStep(1); setPassword(""); }} className="text-foreground hover:underline font-medium">
+              <button type="button" onClick={() => { setIsSignUp(true); setSignupStep(1); setPassword(""); }} className="text-accent hover:underline font-medium">
                 Sign up here
               </button>
             </div>
@@ -801,8 +721,8 @@ export default function Auth() {
         {isSignUp && signupStep === 1 && (
           <p className="text-xs text-center text-muted-foreground mt-4">
             By creating an account, you agree to our{" "}
-            <a href="#" className="text-foreground hover:underline">Terms of Service</a>{" "}and{" "}
-            <a href="#" className="text-foreground hover:underline">Privacy Policy</a>
+            <a href="#" className="text-accent hover:underline">Terms of Service</a>{" "}and{" "}
+            <a href="#" className="text-accent hover:underline">Privacy Policy</a>
           </p>
         )}
       </div>

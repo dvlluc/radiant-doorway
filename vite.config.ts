@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    allowedHosts: ["pointedly-jovial-goldcrest.cloudpub.ru", "beauty-booking-and-directory-my-var.vercel.app"],
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
@@ -17,9 +16,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: "es2020",
-    cssCodeSplit: true,
-    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -33,12 +29,6 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
-    include: [
-      "react",
-      "react-dom",
-      "react-router-dom",
-      "@tanstack/react-query",
-      "@supabase/supabase-js",
-    ],
+    include: ['react', 'react-dom', 'react-router-dom'],
   },
 }));

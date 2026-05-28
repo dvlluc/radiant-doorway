@@ -68,11 +68,6 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      boxShadow: {
-        card: "var(--shadow-card)",
-        elevated: "var(--shadow-elevated)",
-        hover: "var(--shadow-hover)",
-      },
       keyframes: {
         "accordion-down": {
           from: {
@@ -90,45 +85,10 @@ export default {
             height: "0",
           },
         },
-        "fade-in": {
-          from: {
-            opacity: "0",
-            transform: "translateY(10px)",
-          },
-          to: {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
-        },
-        "page-fade": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "image-reveal": {
-          from: {
-            opacity: "0",
-            filter: "blur(6px)",
-            transform: "scale(1.015)",
-          },
-          to: {
-            opacity: "1",
-            filter: "blur(0)",
-            transform: "scale(1)",
-          },
-        },
-        shimmer: {
-          "100%": {
-            transform: "translateX(100%)",
-          },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
-        "page-fade": "page-fade 0.32s ease-out forwards",
-        "image-reveal": "image-reveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards",
-        shimmer: "shimmer 1.5s ease-in-out infinite",
       },
     },
   },

@@ -95,7 +95,7 @@ const More = () => {
           <button
             key={item.label}
             onClick={item.onClick}
-            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-accent/5 transition-colors"
           >
             <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
               <item.icon className="w-4.5 h-4.5 text-foreground" />
@@ -127,7 +127,7 @@ const More = () => {
       <div className="px-4 pt-4 pb-2">
         <button
           onClick={() => user ? navigate(`/professional/${user.id}`) : navigate("/auth", { state: { mode: "signin" } })}
-          className="w-full flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:bg-muted transition-colors"
+          className="w-full flex items-center gap-3 p-4 rounded-xl bg-card border border-border hover:bg-accent/5 transition-colors"
         >
           <Avatar className="w-12 h-12">
             <AvatarImage src={profile?.avatar_url} />

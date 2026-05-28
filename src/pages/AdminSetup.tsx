@@ -85,7 +85,7 @@ export default function AdminSetup() {
 
           {status === "success" && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-foreground">
+              <div className="flex items-center gap-2 text-green-600">
                 <CheckCircle className="h-5 w-5" />
                 <p className="font-medium">Admin privileges granted successfully!</p>
               </div>
@@ -100,7 +100,7 @@ export default function AdminSetup() {
 
           {status === "already_admin" && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-blue-600">
                 <CheckCircle className="h-5 w-5" />
                 <p className="font-medium">You already have admin privileges!</p>
               </div>
@@ -123,7 +123,7 @@ export default function AdminSetup() {
                 There was an error setting up admin access. Please check the console for details.
               </p>
               <Button onClick={() => navigate("/directory")} variant="outline" className="w-full">
-                Go Back
+                Go Back Home
               </Button>
             </div>
           )}

@@ -1,7 +1,8 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Users, Sparkles, ShoppingBag, ChevronDown } from "lucide-react";
-import { preloadRoute } from "@/lib/routePreload";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/hooks/useNotifications";
+import { Users, Sparkles, ShoppingBag, Bell, ChevronDown } from "lucide-react";
 
 const navItems = [
   { icon: Users, label: "Professionals", path: "/directory" },
@@ -18,34 +19,35 @@ const footerLinks = [
   ],
   [
     { label: "Cookies", path: "/terms?tab=cookies" },
-    { label: "Community", path: "/terms?tab=community" },
     { label: "Refund", path: "/terms?tab=refund" },
     { label: "Beta", path: "/beta" }
   ]
 ];
 
 export function Sidebar() {
+  const { user } = useAuth();
+  const { hasUnread } = useNotifications(user?.id);
+  const navigate = useNavigate();
+
   return (
-    <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 flex-col border-r border-border/60 bg-background/80 shadow-[4px_0_24px_hsla(0,0%,0%,0.04)] backdrop-blur-xl">
+    <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-background flex-col border-r border-border">
       <nav className="flex-1 pt-6 px-2 space-y-1">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
-            onMouseEnter={() => preloadRoute(item.path)}
-            onFocus={() => preloadRoute(item.path)}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200",
-                "hover:bg-muted hover:shadow-sm",
-                isActive && "bg-muted font-semibold text-foreground shadow-sm"
+                "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
+                "hover:bg-muted/50",
+                isActive && "text-primary"
               )
             }
           >
-            {() => (
+            {({ isActive }) => (
               <>
                 <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-4 h-4 text-white" />
+                  <item.icon className={cn("w-4 h-4", isActive ? "text-[hsl(43,90%,55%)]" : "text-white")} />
                 </div>
                 <span className="font-medium text-[15px]">{item.label}</span>
               </>
@@ -53,21 +55,40 @@ export function Sidebar() {
           </NavLink>
         ))}
 
+        {user && (
+          <button
+            onClick={() =>
+              navigate("/account", { state: { activeSection: "Notifications" } })
+            }
+            className={cn(
+              "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors w-full text-left",
+              "hover:bg-muted/50 relative"
+            )}
+          >
+            <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+              <Bell className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-medium text-[15px]">Notifications</span>
+            {hasUnread && (
+              <span className="absolute top-[15px] left-[145px] w-2 h-2 bg-destructive rounded-full border border-background" />
+            )}
+          </button>
+        )}
+
         <NavLink
           to="/impact"
-          onMouseEnter={() => preloadRoute("/impact")}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-200",
-              "hover:bg-muted hover:shadow-sm",
-              isActive && "bg-muted font-semibold text-foreground shadow-sm"
+              "flex items-center gap-4 px-3 py-3 rounded-lg transition-colors",
+              "hover:bg-muted/50",
+              isActive && "text-primary"
             )
           }
         >
-          {() => (
+          {({ isActive }) => (
             <>
               <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
-                <ChevronDown className="w-4 h-4 text-white" />
+                <ChevronDown className={cn("w-4 h-4", isActive ? "text-[hsl(43,90%,55%)]" : "text-white")} />
               </div>
               <span className="font-medium text-[15px]">Impact</span>
             </>

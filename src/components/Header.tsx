@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { MobileNav } from "@/components/MobileNav";
-import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 import logo from "@/assets/bellonecta-logo-white.png";
 import logoIcon from "@/assets/bellonecta-icon.jpg";
 import {
@@ -14,12 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { memo, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 
-function HeaderInner() {
+export function Header() {
   const { user } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,26 +54,30 @@ function HeaderInner() {
       <div className="fixed top-0 left-0 right-0 z-50 bg-background text-foreground text-center text-[12px] md:text-[14px] font-medium leading-[18px] md:leading-[20px] py-1.5 border-b border-border font-playfair hidden md:block">
         Join free today — Low commission for beauty professionals
       </div>
-      <header className="fixed top-0 md:top-[30px] left-0 right-0 h-14 bg-black/90 text-white z-50 flex items-center justify-between px-4 md:px-6 py-1 shadow-elevated backdrop-blur-xl supports-[backdrop-filter]:bg-black/80">
+      <header className="fixed top-0 md:top-[30px] left-0 right-0 h-14 bg-black text-white z-50 flex items-center justify-between px-4 md:px-6 py-1">
       <div className="flex items-center gap-2">
         <Link to="/directory" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
           {/* Icon only on mobile, full logo on larger screens */}
           <img 
             src={logoIcon} 
             alt="BelloNecta" 
-            className="h-[26px] w-[26px] md:hidden" 
+            className="h-5 w-5 md:hidden" 
           />
           <img 
             src={logo} 
             alt="BelloNecta" 
-            className="hidden md:block h-7 w-auto" 
+            className="hidden md:block h-5 w-auto" 
           />
         </Link>
       </div>
       
       <div className="flex items-center gap-2 md:gap-4">
+        {/* Mobile: hamburger menu replaces search */}
+        <MobileNav />
+
+        {/* Desktop: search */}
         {showSearch ? (
-          <form onSubmit={handleSearch} className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
+          <form onSubmit={handleSearch} className="hidden md:flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
             <Input
               type="text"
               placeholder="Search BelloNecta"
@@ -89,10 +92,10 @@ function HeaderInner() {
               className="w-40 sm:w-64 md:w-[500px] h-9 bg-white border-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
               autoFocus
             />
-            <Button 
+            <Button
               type="button"
-              variant="ghost" 
-              size="icon" 
+              variant="ghost"
+              size="icon"
               className="text-white hover:bg-white/10 h-9 w-9"
               onClick={() => {
                 setShowSearch(false);
@@ -103,17 +106,15 @@ function HeaderInner() {
             </Button>
           </form>
         ) : (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-white hover:bg-white/10"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex text-white hover:bg-white/10"
             onClick={() => setShowSearch(true)}
           >
             <Search className="w-5 h-5" />
           </Button>
         )}
-
-        {user && <NotificationsDropdown userId={user.id} />}
 
         <Button 
           variant="ghost" 
@@ -123,7 +124,8 @@ function HeaderInner() {
         >
           <ShoppingCart className="w-5 h-5" />
         </Button>
-
+        
+        
         <div className="hidden md:flex items-center gap-4">
           {user ? (
             <DropdownMenu>
@@ -203,5 +205,3 @@ function HeaderInner() {
     </>
   );
 }
-
-export const Header = memo(HeaderInner);

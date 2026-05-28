@@ -5,10 +5,7 @@ export function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    });
-    return () => cancelAnimationFrame(id);
+    window.scrollTo(0, 0);
   }, [pathname]);
 
   return null;

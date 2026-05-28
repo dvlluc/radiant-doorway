@@ -32,7 +32,7 @@ export function useNotifications(userId: string | undefined) {
       return data || [];
     },
     enabled: !!userId,
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds - notifications should be relatively fresh
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 

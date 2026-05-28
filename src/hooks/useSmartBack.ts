@@ -35,6 +35,7 @@ export function useSmartBack(fallbackPath?: string) {
     } else if (path.startsWith('/account')) {
       navigate('/directory');
     } else {
+      // Default fallback to home
       navigate('/directory');
     }
   };

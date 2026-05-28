@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Heart, Bookmark, BookmarkCheck, MapPin, Clock, Search, X, Star, Share2, User, Scissors } from "lucide-react";
+import { Heart, Bookmark, BookmarkCheck, MapPin, Clock, Search, X, Star, Share2, User, Scissors, SlidersHorizontal, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { SEO } from "@/components/SEO";
 import { getCurrencyFromLocation } from "@/utils/currency";
 import { StyleDetailModal } from "@/components/StyleDetailModal";
 import { ShareDialog } from "@/components/ShareDialog";
+import { MobileNav } from "@/components/MobileNav";
 
 interface Style {
   id: string;
@@ -39,114 +40,102 @@ const categories = [
   { value: "lashes", label: "Lashes" },
 ];
 
-const StyleCard = memo(({ style, isSaved, onSave, onNavigate, onShare }: {
+const StyleCard = memo(({ style, isSaved, onSave, onNavigate, onShare, horizontal }: {
   style: Style;
   isSaved: boolean;
   onSave: (id: string) => void;
   onNavigate: (id: string) => void;
   onShare: (id: string, name: string) => void;
+  horizontal?: boolean;
 }) => {
   const currency = getCurrencyFromLocation(style.location || "United States");
   const navigate = useNavigate();
 
+  const handleBook = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/booking/${style.professional_id}`, {
+      state: {
+        fromStyle: true,
+        styleId: style.id,
+        styleName: style.style_name,
+        stylePhoto: style.photo_url,
+        servicesRequired: style.services_required || [],
+        estimatedPrice: style.estimated_price,
+        estimatedTime: style.estimated_time,
+      }
+    });
+  };
+
   return (
-    <div className="group flex flex-col bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all duration-300 h-full">
-      <div className="relative cursor-pointer" onClick={() => onNavigate(style.id)}>
+    <div className={`group flex ${horizontal ? "flex-row" : "flex-col"} sm:flex-col bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all duration-300 h-full`}>
+      <div className={`relative cursor-pointer ${horizontal ? "w-[42%]" : "w-full"} sm:w-full shrink-0`} onClick={() => onNavigate(style.id)}>
         <img
           src={style.photo_url}
           alt={style.style_name}
-          className="w-full h-52 object-cover"
+          className={`w-full ${horizontal ? "h-full" : ""} aspect-square sm:h-52 sm:aspect-auto object-cover`}
           loading="lazy"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <Badge className="absolute top-3 left-3 bg-background/90 text-foreground text-[10px] uppercase tracking-wider border-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); onSave(style.id); }}
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-background/90 hover:bg-background transition-all"
+          aria-label={isSaved ? "Unsave" : "Save"}
+        >
+          <Heart className={`w-4 h-4 ${isSaved ? "fill-primary text-primary" : "text-foreground"}`} />
+        </button>
+        <Badge className="hidden sm:inline-flex absolute top-3 left-3 bg-background/90 text-foreground text-[10px] uppercase tracking-wider border-0 opacity-0 group-hover:opacity-100 transition-opacity">
           {style.category}
         </Badge>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onShare(style.id, style.style_name);
-          }}
-          className="absolute top-3 right-3 p-2 rounded-full bg-background/90 hover:bg-background transition-all opacity-0 group-hover:opacity-100"
+          onClick={(e) => { e.stopPropagation(); onShare(style.id, style.style_name); }}
+          className="hidden sm:block absolute top-3 right-12 p-2 rounded-full bg-background/90 hover:bg-background transition-all opacity-0 group-hover:opacity-100"
         >
           <Share2 className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
 
-      <div className="p-3 space-y-1.5 flex flex-col flex-1">
-        <h3 className="font-semibold text-sm leading-tight">{style.style_name}</h3>
-        
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">by</span>
-          <button
-            onClick={(e) => { e.stopPropagation(); navigate(`/professional/${style.professional_id}`); }}
-            className="text-xs font-medium text-foreground hover:text-primary hover:underline transition-colors truncate"
-          >
-            {style.professional_name || "Professional"}
-          </button>
-        </div>
+      <div className="p-3 flex flex-col flex-1 min-w-0">
+        <h3
+          className="font-semibold text-sm leading-tight truncate cursor-pointer"
+          onClick={() => onNavigate(style.id)}
+        >
+          {style.style_name}
+        </h3>
 
-        {(style.avg_rating != null && style.avg_rating > 0) && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-            <span className="font-medium text-foreground">{style.avg_rating.toFixed(1)}</span>
-            {style.review_count != null && style.review_count > 0 && (
-              <span>({style.review_count} {style.review_count === 1 ? 'review' : 'reviews'})</span>
-            )}
-          </div>
-        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); navigate(`/professional/${style.professional_id}`); }}
+          className="text-xs text-muted-foreground hover:text-primary text-left truncate mt-0.5"
+        >
+          By <span className="text-foreground font-medium">{style.professional_name || "Professional"}</span>
+        </button>
 
         {style.location && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3 shrink-0" />
-              <span className="truncate">{style.location.split(',')[0].trim()}</span>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); onSave(style.id); }}
-              className="p-1"
-            >
-              {isSaved ? (
-                <BookmarkCheck className="w-4 h-4 text-primary" />
-              ) : (
-                <Bookmark className="w-4 h-4 text-muted-foreground" />
-              )}
-            </button>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+            <MapPin className="w-3 h-3 shrink-0" />
+            <span className="truncate">{style.location.split(',').slice(0, 2).join(',').trim()}</span>
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-0.5">
+        <div className="flex items-center justify-between gap-2 mt-2">
           <span className="text-sm font-semibold text-foreground">
             From {currency.symbol}{(style.estimated_price ?? 0).toFixed(0)}
           </span>
           {style.estimated_time != null && (
-            <>
-              <span>•</span>
-              <span>{style.estimated_time} min</span>
-            </>
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              {style.estimated_time >= 60
+                ? `${(style.estimated_time / 60).toFixed(1).replace(/\.0$/, '')} hrs`
+                : `${style.estimated_time} min`}
+            </span>
           )}
         </div>
 
         <Button
           size="sm"
-          className="w-full text-xs h-8 mt-auto"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/booking/${style.professional_id}`, {
-              state: {
-                fromStyle: true,
-                styleId: style.id,
-                styleName: style.style_name,
-                stylePhoto: style.photo_url,
-                servicesRequired: style.services_required || [],
-                estimatedPrice: style.estimated_price,
-                estimatedTime: style.estimated_time,
-              }
-            });
-          }}
+          className="w-full text-xs h-9 sm:h-8 mt-2 rounded-lg"
+          onClick={handleBook}
         >
-          Book This Look
+          Book this Look
         </Button>
       </div>
     </div>
@@ -165,6 +154,7 @@ export default function ExploreStyles() {
   const [styleSearch, setStyleSearch] = useState("");
   const [professionalSearch, setProfessionalSearch] = useState("");
   const [locationSearch, setLocationSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -277,47 +267,69 @@ export default function ExploreStyles() {
       <SEO title="Explore Styles | BelloNecta" description="Discover beauty styles and book professionals who can create your perfect look." />
       
       <div className="space-y-6">
-        {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Explore Styles
+        {/* Hero — mobile shows brand hero; desktop keeps page heading */}
+        <div className="space-y-2 sm:space-y-1">
+          <h1
+            className="text-4xl leading-tight sm:text-2xl md:text-3xl font-bold tracking-tight"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            <span className="sm:hidden">See the Look,<br />Book the Look.</span>
+            <span className="hidden sm:inline">Explore Styles</span>
           </h1>
           <p className="text-sm text-muted-foreground">
-            Discover looks you love, then book the professional who created them.
+            <span className="sm:hidden">Discover, Connect, Book.</span>
+            <span className="hidden sm:inline">Discover looks you love, then book the professional who created them.</span>
           </p>
         </div>
 
-        {/* Fresha-style Segmented Search Bar */}
-        <div className="flex flex-col md:flex-row items-stretch border border-border rounded-xl overflow-hidden bg-card shadow-sm">
+        {/* Mobile: single search bar (taps to expand filters) */}
+        <div className="sm:hidden">
+          {!showFilters && !hasSearch ? (
+            <button
+              onClick={() => setShowFilters(true)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 border border-border rounded-full bg-card shadow-sm text-left"
+            >
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground flex-1 truncate">Search styles, professionals…</span>
+              <SlidersHorizontal className="w-4 h-4 text-muted-foreground shrink-0" />
+            </button>
+          ) : (
+            <div className="flex flex-col items-stretch border border-border rounded-xl overflow-hidden bg-card shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                <Scissors className="w-4 h-4 text-muted-foreground shrink-0" />
+                <input type="text" placeholder="Any style" value={styleSearch} onChange={e => setStyleSearch(e.target.value)} className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                <input type="text" placeholder="Any professional" value={professionalSearch} onChange={e => setProfessionalSearch(e.target.value)} className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-2 px-4 py-3">
+                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                <input type="text" placeholder="Any location" value={locationSearch} onChange={e => setLocationSearch(e.target.value)} className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground" />
+              </div>
+              <button
+                onClick={() => { setStyleSearch(""); setProfessionalSearch(""); setLocationSearch(""); setShowFilters(false); }}
+                className="flex items-center justify-center gap-2 px-4 py-3 text-muted-foreground hover:text-foreground transition-colors border-t border-border text-xs"
+              >
+                <X className="w-4 h-4" /> Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: segmented search */}
+        <div className="hidden sm:flex flex-col md:flex-row items-stretch border border-border rounded-xl overflow-hidden bg-card shadow-sm">
           <div className="flex items-center gap-2 px-4 py-3 flex-1 border-b md:border-b-0 md:border-r border-border">
             <Scissors className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Any style"
-              value={styleSearch}
-              onChange={e => setStyleSearch(e.target.value)}
-              className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground"
-            />
+            <input type="text" placeholder="Any style" value={styleSearch} onChange={e => setStyleSearch(e.target.value)} className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground" />
           </div>
           <div className="flex items-center gap-2 px-4 py-3 flex-1 border-b md:border-b-0 md:border-r border-border">
             <User className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Any professional"
-              value={professionalSearch}
-              onChange={e => setProfessionalSearch(e.target.value)}
-              className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground"
-            />
+            <input type="text" placeholder="Any professional" value={professionalSearch} onChange={e => setProfessionalSearch(e.target.value)} className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground" />
           </div>
           <div className="flex items-center gap-2 px-4 py-3 flex-1">
             <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-            <input
-              type="text"
-              placeholder="Any location"
-              value={locationSearch}
-              onChange={e => setLocationSearch(e.target.value)}
-              className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground"
-            />
+            <input type="text" placeholder="Any location" value={locationSearch} onChange={e => setLocationSearch(e.target.value)} className="bg-transparent text-sm w-full outline-none placeholder:text-muted-foreground" />
           </div>
           {hasSearch && (
             <button
@@ -346,9 +358,10 @@ export default function ExploreStyles() {
           ))}
         </div>
 
+
         {/* Masonry Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="bg-muted rounded-xl animate-pulse h-[380px]" />
             ))}
@@ -362,13 +375,14 @@ export default function ExploreStyles() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className={`grid ${hasSearch ? "grid-cols-1" : "grid-cols-2"} sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3`}>
             {filteredStyles.map(style => (
               <StyleCard
                 key={style.id}
                 style={style}
                 isSaved={savedIds.has(style.id)}
                 onSave={toggleSave}
+                horizontal={!!hasSearch}
                 onNavigate={(id) => {
                   setSelectedStyleId(id);
                   setModalOpen(true);

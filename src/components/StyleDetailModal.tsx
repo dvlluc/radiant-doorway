@@ -215,7 +215,7 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
                 <X className="h-4 w-4" />
               </button>
 
-              <Badge className="absolute left-3 top-3 border-0 bg-background/80 text-[10px] font-semibold uppercase tracking-wider text-foreground backdrop-blur-sm">
+              <Badge className="absolute left-3 top-3 border-0 bg-background/80 text-xs font-medium capitalize text-foreground backdrop-blur-sm">
                 {style.category}
               </Badge>
 
@@ -236,27 +236,27 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
             </div>
 
             <div className="space-y-4 p-5">
-              <h2 className="text-xl font-bold leading-tight tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h2 className="text-xl font-bold leading-tight tracking-tight">
                 {style.style_name}
               </h2>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Style By</span>
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">Style by</span>
                   <span className="truncate font-medium">
                     {style.services_required?.length ? style.services_required.join(", ") : "Not added"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Est. Price</span>
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">Est. price</span>
                   <span className="font-semibold text-foreground">
                     {displayedPrice != null ? `${displayedCurrencySymbol}${displayedPrice.toFixed(0)}` : "Not added"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Est. Time</span>
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">Est. time</span>
                   <span className="inline-flex items-center gap-1 text-foreground">
                     <Clock className="h-3.5 w-3.5" />
                     {displayedTime != null ? `${displayedTime} min` : "Not added"}

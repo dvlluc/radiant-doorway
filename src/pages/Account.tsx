@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +24,7 @@ import { PersonalInformationForm } from "@/components/PersonalInformationForm";
 import { formatDate } from "@/utils/dateFormat";
 import { AccountSettings } from "@/components/AccountSettings";
 import { NotificationsPage } from "@/components/NotificationsPage";
+
 import { SavedItemsSection } from "@/components/SavedItemsSection";
 import { FollowersSection } from "@/components/FollowersSection";
 import { MyBookingsPage } from "@/components/MyBookingsPage";
@@ -33,6 +34,7 @@ import { TeamMemberPage } from "@/components/TeamMemberPage";
 import { PurchasesSubscriptions } from "@/components/PurchasesSubscriptions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+
 type MenuSection =
   | "Home" 
   | "Overview" 
@@ -335,7 +337,7 @@ export default function Account() {
               icon: FileText,
               title: "You created a new post",
               date: formatDate(post.created_at),
-              iconColor: "text-foreground",
+              iconColor: "text-blue-500",
               timestamp: new Date(post.created_at)
             });
           });
@@ -357,7 +359,7 @@ export default function Account() {
               icon: MessageCircle,
               title: "You commented on a post",
               date: formatDate(comment.created_at),
-              iconColor: "text-muted-foreground",
+              iconColor: "text-green-500",
               timestamp: new Date(comment.created_at)
             });
           });
@@ -463,7 +465,7 @@ export default function Account() {
       menuItems = [
         ...menuItems.slice(0, notificationsIndex + 1),
         "Team Member",
-        ...menuItems.slice(notificationsIndex + 1),
+        ...menuItems.slice(notificationsIndex + 1)
       ];
     }
   }
@@ -539,8 +541,8 @@ export default function Account() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Account Status</p>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-foreground"></div>
-                      <span className="text-sm font-medium text-foreground">Active</span>
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm font-medium text-green-600">Active</span>
                     </div>
                   </div>
                   <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
@@ -731,7 +733,6 @@ export default function Account() {
         </div>
         <div className="flex gap-3">
           <Link to="/refund" className="hover:text-foreground" onClick={onMenuClick}>Refund</Link>
-          <Link to="/community" className="hover:text-foreground" onClick={onMenuClick}>Community</Link>
           <Link to="/policy" className="hover:text-foreground" onClick={onMenuClick}>Policy</Link>
         </div>
       </div>
@@ -740,6 +741,7 @@ export default function Account() {
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-7xl mx-auto pt-0 px-0 sm:px-4 overflow-x-hidden">
+      {/* Mobile Menu Header */}
       <div className="md:hidden flex items-center gap-2 mb-4">
           <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate(-1)}>
             <ChevronLeft className="w-5 h-5" />
@@ -765,7 +767,7 @@ export default function Account() {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
+      </div>
 
       {/* Desktop Left Sidebar */}
       <div className="hidden md:block w-64 space-y-6 border-r pr-6 flex-shrink-0">

@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { MapPin, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { fetchDirectoryBusinesses } from "@/lib/fetchDirectoryBusinesses";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import heroImage from "@/assets/hero-beauty-professional.jpg";
 
@@ -35,29 +34,26 @@ const categories = [
   { label: "Waxing" },
 ];
 
-import type { DirectoryBusiness as Business } from "@/lib/fetchDirectoryBusinesses";
+interface Business {
+  id: string;
+  user_id: string;
+  business_name: string;
+  category: string | null;
+  address: string;
+  avatar_url: string | null;
+  about_us: string | null;
+  directory_photo?: string | null;
+  appointment_booking_enabled?: boolean;
+  averageRating?: number;
+  reviewCount?: number;
+}
 
 export default function Directory() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-
-  const {
-    data: businesses = [],
-    isLoading: loading,
-    isError,
-  } = useQuery({
-    queryKey: ["directory-businesses"],
-    queryFn: fetchDirectoryBusinesses,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-
-  useEffect(() => {
-    if (isError) {
-      toast({ title: "Error", description: "Failed to load businesses", variant: "destructive" });
-    }
-  }, [isError, toast]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [locationFilter, setLocationFilter] = useState(() => {
     const loc = searchParams.get("location") || "";
@@ -77,6 +73,69 @@ export default function Directory() {
       scrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
     }
   };
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('business_profiles')
+          .select('id, user_id, business_name, category, address, avatar_url, about_us')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const businessesWithExtras = await Promise.all(
+          (data || []).map(async (business) => {
+            const { data: photos } = await supabase
+              .from('business_photos')
+              .select('photo_url')
+              .eq('user_id', business.user_id)
+              .eq('photo_type', 'directory')
+              .order('display_order', { ascending: true })
+              .limit(1)
+              .maybeSingle();
+
+            const { data: settings } = await supabase
+              .from('business_settings')
+              .select('appointment_booking_enabled')
+              .eq('user_id', business.user_id)
+              .maybeSingle();
+
+            const [reviewsData, reviewPostsData] = await Promise.all([
+              supabase.from('reviews').select('rating').eq('business_id', business.user_id),
+              supabase.from('posts').select('rating').eq('business_id', business.user_id).eq('post_type', 'review'),
+            ]);
+
+            const allRatings = [
+              ...(reviewsData.data || []).map(r => r.rating),
+              ...(reviewPostsData.data || []).map(p => p.rating || 5),
+            ];
+
+            const averageRating = allRatings.length > 0
+              ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
+              : 0;
+
+            return {
+              ...business,
+              directory_photo: photos?.photo_url || null,
+              appointment_booking_enabled: settings?.appointment_booking_enabled || false,
+              averageRating,
+              reviewCount: allRatings.length,
+            };
+          })
+        );
+
+        setBusinesses(businessesWithExtras);
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+        toast({ title: "Error", description: "Failed to load businesses", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusinesses();
+  }, [toast]);
 
   const filteredBusinesses = businesses.filter((b) => {
     const matchesSearch = !searchQuery || 
