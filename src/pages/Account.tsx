@@ -581,43 +581,6 @@ export default function Account() {
             </Card>
           </div>
 
-          {/* Social Media Stats */}
-          <div>
-            <h2 className="text-lg sm:text-xl font-semibold mb-4">Social Media</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card 
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setActiveSection("Followers")}
-              >
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Followers</p>
-                      <p className="text-xl sm:text-2xl font-bold">{followersCount}</p>
-                    </div>
-                    <Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => setActiveSection("Followers")}
-              >
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Following</p>
-                      <p className="text-xl sm:text-2xl font-bold">{followingCount}</p>
-                    </div>
-                    <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                  </div>
-                </CardContent>
-              </Card>
-
-            </div>
-          </div>
-
           {/* Recent Activity */}
           <Card>
             <CardContent className="p-4 sm:p-6">
