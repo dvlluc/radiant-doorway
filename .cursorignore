@@ -1,21 +1,21 @@
-# Игнорировать папки зависимостей и сборки
+# Ignore dependency and build folders
 node_modules/
 dist/
 build/
 .next/
 vendor/
 
-# Игнорировать тяжелые файлы данных и базы данных
+# Ignore heavy data files and databases
 *.db
 *.sqlite
 data/
 
-# Игнорировать логи и системные файлы
+# Ignore logs and system files
 *.log
 .git/
 .idea/
 .vscode/
 
-# Конфиденциальные файлы с секретами
+# Sensitive files with secrets
 .env
 .env*.local
