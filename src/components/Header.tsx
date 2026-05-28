@@ -116,14 +116,16 @@ export function Header() {
           </Button>
         )}
 
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="hidden md:flex text-white hover:bg-white/10"
-          onClick={() => navigate("/cart")}
-        >
-          <ShoppingCart className="w-5 h-5" />
-        </Button>
+        {user && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hidden md:flex text-white hover:bg-white/10"
+            onClick={() => navigate("/cart")}
+          >
+            <ShoppingCart className="w-5 h-5" />
+          </Button>
+        )}
         
         
         <div className="hidden md:flex items-center gap-4">
