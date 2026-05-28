@@ -17,6 +17,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const BUSINESS_CATEGORIES = [
+  "Salons",
+  "Nails",
+  "Skin",
+  "Makeup",
+  "Barbers",
+  "Spa",
+  "Hair Braiding",
+  "Lashes",
+  "Brows",
+  "Aesthetics",
+  "Massage",
+  "Waxing",
+];
 
 interface PersonalInformationFormProps {
   userId: string;
@@ -52,6 +74,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
     country: "",
     bio: "",
     website: "",
+    businessCategory: "",
     businessHours: "",
     avatarUrl: ""
   });
@@ -75,6 +98,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
       let orgPhone = profile.telephone || "";
       let orgAddress = "";
       let orgWebsite = "";
+      let orgCategory = "";
       
       if (accountType === "charitable_partner") {
         const { data } = await supabase
@@ -107,7 +131,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
       } else if (accountType === "business") {
         const { data } = await supabase
           .from("business_profiles")
-          .select("business_name, first_name, last_name, telephone, address, website")
+          .select("business_name, first_name, last_name, telephone, address, website, category")
           .eq("user_id", userId)
           .maybeSingle();
         if (data) {
@@ -117,6 +141,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
           orgPhone = data.telephone || orgPhone;
           orgAddress = data.address || "";
           orgWebsite = data.website || "";
+          orgCategory = data.category || "";
           if (data.business_name) {
             const slug = data.business_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
             setBookingLink(`${window.location.origin}/booking/${slug}`);
@@ -157,6 +182,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
         country: parsedCountry,
         bio: profile.bio || "",
         website: orgWebsite,
+        businessCategory: orgCategory,
         businessHours: "",
         avatarUrl: profile.avatar_url || ""
       });
@@ -259,13 +285,15 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
 
       if (profileError) throw profileError;
 
-      // Build full address string for currency detection
+      // Build full address string
       const addressParts = [
+        formData.streetAddress,
         formData.city,
         formData.state,
-        formData.country
+        formData.zipCode,
+        formData.country,
       ].filter(Boolean);
-      const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : formData.streetAddress;
+      const fullAddress = addressParts.join(", ");
 
       // Update organization-specific table if applicable
       if (accountType === "charitable_partner" && formData.organizationName) {
@@ -296,15 +324,16 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
           .eq("user_id", userId);
         
         if (brandError) throw brandError;
-      } else if (accountType === "business" && formData.organizationName) {
+      } else if (accountType === "business") {
         const { error: businessError } = await supabase
           .from("business_profiles")
           .update({
             business_name: formData.organizationName,
+            category: formData.businessCategory || null,
             first_name: formData.firstName,
             last_name: formData.lastName,
             telephone: formatPhoneForTwilio(formData.phoneNumber),
-            address: fullAddress || formData.streetAddress,
+            address: fullAddress,
             website: formData.website
           })
           .eq("user_id", userId);
@@ -526,6 +555,8 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
                   id="organizationName"
                   value={formData.organizationName}
                   onChange={(e) => setFormData(prev => ({ ...prev, organizationName: e.target.value }))}
+                  disabled={!isEditMode}
+                  className={!isEditMode ? "bg-muted" : ""}
                   placeholder={
                     accountType === "charitable_partner" ? "Enter your charity name" :
                     accountType === "brand" ? "Enter your business name" :
@@ -545,6 +576,27 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
                   placeholder="https://example.com"
                 />
               </div>
+            </div>
+          )}
+
+          {/* Business Category - business accounts only */}
+          {accountType === "business" && (
+            <div className="space-y-2">
+              <Label htmlFor="businessCategory">Business Category</Label>
+              <Select
+                value={formData.businessCategory}
+                onValueChange={(value) => setFormData({ ...formData, businessCategory: value })}
+                disabled={!isEditMode}
+              >
+                <SelectTrigger id="businessCategory" className={!isEditMode ? "bg-muted" : ""}>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BUSINESS_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 

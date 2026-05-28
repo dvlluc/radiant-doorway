@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -20,23 +19,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
 import authLogo from "@/assets/bellonecta-logo-white.png";
 
-const authSchema = z.object({
+const authBaseSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string().optional(),
   firstName: z.string().trim().min(1, { message: "First name is required" }).optional(),
   lastName: z.string().trim().min(1, { message: "Last name is required" }).optional(),
   displayName: z.string().trim().optional(),
-  telephone: z.string().trim().optional(),
-  brandName: z.string().trim().optional(),
-  businessName: z.string().trim().optional(),
-  website: z.string().trim().optional(),
-  streetAddress: z.string().trim().optional(),
-  city: z.string().trim().optional(),
-  state: z.string().trim().optional(),
-  zipCode: z.string().trim().optional(),
-  country: z.string().trim().optional(),
-}).refine((data) => {
+  telephone: z.string().trim().min(1, { message: "Telephone number is required" }).optional(),
+});
+
+const authSchema = authBaseSchema.refine((data) => {
   if (data.confirmPassword !== undefined && data.password !== data.confirmPassword) {
     return false;
   }
@@ -46,15 +39,40 @@ const authSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AccountType = "individual" | "brand" | "business";
-type BusinessOffering = "" | "product" | "services" | "both";
+const signupIndividualSchema = authBaseSchema.extend({
+  telephone: z.string().trim().min(1, { message: "Telephone number is required" }),
+  firstName: z.string().trim().min(1, { message: "First name is required" }),
+  lastName: z.string().trim().min(1, { message: "Last name is required" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
-const businessCategories = [
-  "Barber", "Beauty Blogger", "Beauty subscription boxes", "Body", "Brows",
-  "Dental", "Digital Services", "Education", "Facial", "Fragrance",
-  "Hair Removal", "Lashes", "Massages", "Nail technician", "Salons",
-  "Skin Care", "Spa", "Sustainability", "Tattoo", "Weight Loss", "Other",
+const signupBusinessSchema = authBaseSchema.extend({
+  telephone: z.string().trim().min(1, { message: "Telephone number is required" }),
+  businessName: z.string().trim().min(1, { message: "Business name is required" }),
+  businessCategory: z.string().trim().min(1, { message: "Business category is required" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+const BUSINESS_CATEGORIES = [
+  "Salons",
+  "Nails",
+  "Skin",
+  "Makeup",
+  "Barbers",
+  "Spa",
+  "Hair Braiding",
+  "Lashes",
+  "Brows",
+  "Aesthetics",
+  "Massage",
+  "Waxing",
 ];
+
+type AccountType = "individual" | "business";
 
 const accountTypes = [
   {
@@ -67,7 +85,7 @@ const accountTypes = [
     value: "business" as AccountType,
     icon: Briefcase,
     title: "Business",
-    description: "Showcase products, manage services, or both",
+    description: "Showcase your services or portfolio",
   },
 ];
 
@@ -91,7 +109,7 @@ export default function Auth() {
     location.state?.mode === "signin" ? false : true
   );
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  // signupStep: 1 = account type, 2+ = form sub-steps
+  // signupStep: 1 = account type, 2 = full form, 3 = email verification + submit
   const [signupStep, setSignupStep] = useState(1);
   const [accountType, setAccountType] = useState<AccountType>("individual");
   const [email, setEmail] = useState("");
@@ -101,16 +119,8 @@ export default function Auth() {
   const [lastName, setLastName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [telephone, setTelephone] = useState("");
-  const [brandName, setBrandName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [website, setWebsite] = useState("");
-  const [streetAddress, setStreetAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [country, setCountry] = useState("");
   const [businessCategory, setBusinessCategory] = useState("");
-  const [businessOffering, setBusinessOffering] = useState<BusinessOffering>("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -127,10 +137,26 @@ export default function Auth() {
     }
   }, [location.state]);
 
-  // Total steps per account type (step 1 = account type for all)
-  const getTotalSteps = () => {
-    if (accountType === "individual") return 4; // 1: type, 2: contact+security, 3: email verify, 4: personal info
-    return 5; // 1: type, 2: contact+security, 3: email verify, 4: business info, 5: address
+  const getTotalSteps = () => 3;
+
+  const getSignupFormData = () => ({
+    email,
+    password,
+    confirmPassword,
+    telephone,
+    firstName: accountType === "individual" ? firstName : undefined,
+    lastName: accountType === "individual" ? lastName : undefined,
+    displayName: accountType === "individual" ? displayName : undefined,
+    businessName: accountType === "business" ? businessName : undefined,
+    businessCategory: accountType === "business" ? businessCategory : undefined,
+  });
+
+  const validateSignupForm = () => {
+    const formData = getSignupFormData();
+    if (accountType === "individual") {
+      return signupIndividualSchema.parse(formData);
+    }
+    return signupBusinessSchema.parse(formData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,25 +164,9 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const validatedData = authSchema.parse({
-        email,
-        password,
-        confirmPassword: isSignUp ? confirmPassword : undefined,
-        firstName: isSignUp && accountType === "individual" ? firstName : undefined,
-        lastName: isSignUp && accountType === "individual" ? lastName : undefined,
-        displayName: isSignUp && accountType === "individual" ? displayName : undefined,
-        telephone: isSignUp ? telephone : undefined,
-        brandName: isSignUp && accountType === "brand" ? brandName : undefined,
-        businessName: isSignUp && accountType === "business" ? businessName : undefined,
-        website: isSignUp && accountType !== "individual" ? website : undefined,
-        streetAddress: isSignUp && accountType !== "individual" ? streetAddress : undefined,
-        city: isSignUp && accountType !== "individual" ? city : undefined,
-        state: isSignUp && accountType !== "individual" ? state : undefined,
-        zipCode: isSignUp && accountType !== "individual" ? zipCode : undefined,
-        country: isSignUp && accountType !== "individual" ? country : undefined,
-      });
-
       if (isSignUp) {
+        const validatedData = validateSignupForm();
+
         const { data, error } = await supabase.auth.signUp({
           email: validatedData.email,
           password: validatedData.password,
@@ -168,15 +178,8 @@ export default function Auth() {
               display_name: displayName,
               telephone: formatPhoneForTwilio(telephone),
               account_type: accountType,
-              brand_name: accountType === "brand" ? brandName : undefined,
               business_name: accountType === "business" ? businessName : undefined,
               business_category: accountType === "business" ? businessCategory : undefined,
-              website: accountType !== "individual" ? website : undefined,
-              street_address: accountType !== "individual" ? streetAddress : undefined,
-              city: accountType !== "individual" ? city : undefined,
-              state: accountType !== "individual" ? state : undefined,
-              zip_code: accountType !== "individual" ? zipCode : undefined,
-              country: accountType !== "individual" ? country : undefined,
             }
           },
         });
@@ -202,11 +205,13 @@ export default function Auth() {
             setDisplayName("");
             setTelephone("");
           }
-          setBrandName(""); setBusinessName(""); setBusinessCategory("");
-          setWebsite("");
-          setStreetAddress(""); setCity(""); setState(""); setZipCode(""); setCountry("");
         }
       } else {
+        const validatedData = authSchema.parse({
+          email,
+          password,
+        });
+
         const { error } = await supabase.auth.signInWithPassword({
           email: validatedData.email,
           password: validatedData.password,
@@ -231,20 +236,21 @@ export default function Auth() {
   };
 
   const handleNextStep = () => {
-    if (signupStep === 1) {
-      if (accountType === "business" && businessOffering) {
-        if (businessOffering === "product") setAccountType("brand");
+    if (isSignUp && signupStep === 2) {
+      try {
+        validateSignupForm();
+        setSignupStep(3);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          toast({ title: "Validation error", description: error.errors[0].message, variant: "destructive" });
+        }
       }
+      return;
     }
     setSignupStep((s) => s + 1);
   };
 
   const handleBack = () => {
-    if (signupStep === 2) {
-      if (accountType === "brand" && businessOffering === "product") {
-        setAccountType("business");
-      }
-    }
     setSignupStep((s) => s - 1);
   };
 
@@ -313,43 +319,9 @@ export default function Auth() {
         <Input id="email" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" required disabled={loading} />
       </div>
       <div className="space-y-2">
-        <label htmlFor="telephone" className="text-sm font-medium">Telephone Number</label>
-        <Input id="telephone" type="tel" placeholder="+1 (302) 538-9413" value={telephone} onChange={(e) => setTelephone(formatPhoneInput(e.target.value))} className="h-11" disabled={loading} />
+        <label htmlFor="telephone" className="text-sm font-medium">Telephone Number <span className="text-destructive">*</span></label>
+        <Input id="telephone" type="tel" placeholder="+1 (302) 538-9413" value={telephone} onChange={(e) => setTelephone(formatPhoneInput(e.target.value))} className="h-11" required disabled={loading} />
         <p className="text-xs text-muted-foreground">Format: +1 (XXX) XXX-XXXX</p>
-      </div>
-    </div>
-  );
-
-  // --- Address fields (reusable) ---
-  const addressFields = (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="website" className="text-sm font-medium">Website</label>
-        <Input id="website" type="url" placeholder="https://your-website.com" value={website} onChange={(e) => setWebsite(e.target.value)} className="h-11" disabled={loading} />
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="streetAddress" className="text-sm font-medium">Street Address <span className="text-destructive">*</span></label>
-        <Input id="streetAddress" type="text" placeholder="123 East Street, London, EW21 X12" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} className="h-11" required disabled={loading} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="city" className="text-sm font-medium">City/Town <span className="text-destructive">*</span></label>
-          <Input id="city" type="text" placeholder="London" value={city} onChange={(e) => setCity(e.target.value)} className="h-11" required disabled={loading} />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="state" className="text-sm font-medium">State/Province <span className="text-destructive">*</span></label>
-          <Input id="state" type="text" placeholder="Greater London" value={state} onChange={(e) => setState(e.target.value)} className="h-11" required disabled={loading} />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="zipCode" className="text-sm font-medium">ZIP Code/Postal Code <span className="text-destructive">*</span></label>
-          <Input id="zipCode" type="text" placeholder="EW21 X12" value={zipCode} onChange={(e) => setZipCode(e.target.value)} className="h-11" required disabled={loading} />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="country" className="text-sm font-medium">Country/Region <span className="text-destructive">*</span></label>
-          <Input id="country" type="text" placeholder="United Kingdom" value={country} onChange={(e) => setCountry(e.target.value)} className="h-11" required disabled={loading} />
-        </div>
       </div>
     </div>
   );
@@ -380,11 +352,11 @@ export default function Auth() {
     </div>
   );
 
-  // --- Email verification step (reusable) ---
+  // --- Email verification step ---
   const emailVerificationStep = (
     <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
       {stepHeader("Email Verification")}
-      <div className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
             <Mail className="w-8 h-8 text-accent" />
@@ -402,172 +374,74 @@ export default function Auth() {
             <span>Verification email will be sent upon account creation</span>
           </div>
         </div>
-        {navButtons(false)}
-      </div>
+        {navButtons(true)}
+      </form>
       {signInLink}
     </div>
   );
 
-  // --- Render Individual sign-up steps ---
-  const renderIndividualSteps = () => {
-    if (signupStep === 2) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Contact & Security")}
-          <div className="space-y-5">
-            {contactFields}
-            {passwordFields}
-            {navButtons(false)}
-          </div>
-          {signInLink}
-        </div>
-      );
-    }
-    if (signupStep === 3) {
-      return emailVerificationStep;
-    }
-    if (signupStep === 4) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Personal Information")}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="firstName" className="text-sm font-medium">First Name <span className="text-destructive">*</span></label>
-                <Input id="firstName" type="text" placeholder="Enter first name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="h-11" required disabled={loading} />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="lastName" className="text-sm font-medium">Last Name <span className="text-destructive">*</span></label>
-                <Input id="lastName" type="text" placeholder="Enter last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-11" required disabled={loading} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="displayName" className="text-sm font-medium">Screen Name (Optional)</label>
-              <Input id="displayName" type="text" placeholder="Choose a display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="h-11" disabled={loading} />
-              <p className="text-xs text-muted-foreground">This will be your public display name on the platform</p>
-            </div>
-            {navButtons(true)}
-          </form>
-          {signInLink}
-        </div>
-      );
-    }
-    return null;
-  };
+  const businessFormFields = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <label htmlFor="businessName" className="text-sm font-medium">Name of Business <span className="text-destructive">*</span></label>
+        <Input id="businessName" type="text" placeholder="Enter business name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="h-11" required disabled={loading} />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="businessCategory" className="text-sm font-medium">Business Category <span className="text-destructive">*</span></label>
+        <Select value={businessCategory} onValueChange={setBusinessCategory} disabled={loading}>
+          <SelectTrigger id="businessCategory" className="h-11">
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {BUSINESS_CATEGORIES.map((cat) => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
-  // --- Render Brand sign-up steps ---
-  const renderBrandSteps = () => {
-    if (signupStep === 2) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Contact & Security")}
-          <div className="space-y-5">
-            {contactFields}
-            {passwordFields}
-            {navButtons(false)}
-          </div>
-          {signInLink}
+  const individualFormFields = (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="firstName" className="text-sm font-medium">First Name <span className="text-destructive">*</span></label>
+          <Input id="firstName" type="text" placeholder="Enter first name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="h-11" required disabled={loading} />
         </div>
-      );
-    }
-    if (signupStep === 3) {
-      return emailVerificationStep;
-    }
-    if (signupStep === 4) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Business Information")}
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="brandName" className="text-sm font-medium">Business Name <span className="text-destructive">*</span></label>
-              <Input id="brandName" type="text" placeholder="Enter business name" value={brandName} onChange={(e) => setBrandName(e.target.value)} className="h-11" required disabled={loading} />
-            </div>
-            {navButtons(false)}
-          </div>
-          {signInLink}
+        <div className="space-y-2">
+          <label htmlFor="lastName" className="text-sm font-medium">Last Name <span className="text-destructive">*</span></label>
+          <Input id="lastName" type="text" placeholder="Enter last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-11" required disabled={loading} />
         </div>
-      );
-    }
-    if (signupStep === 5) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Address Details")}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {addressFields}
-            {navButtons(true)}
-          </form>
-          {signInLink}
-        </div>
-      );
-    }
-    return null;
-  };
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="displayName" className="text-sm font-medium">Screen Name (Optional)</label>
+        <Input id="displayName" type="text" placeholder="Choose a display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="h-11" disabled={loading} />
+        <p className="text-xs text-muted-foreground">This will be your public display name on the platform</p>
+      </div>
+    </>
+  );
 
-  // --- Render Business sign-up steps ---
-  const renderBusinessSteps = () => {
-    if (signupStep === 2) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Contact & Security")}
-          <div className="space-y-5">
-            {contactFields}
-            {passwordFields}
-            {navButtons(false)}
-          </div>
-          {signInLink}
-        </div>
-      );
-    }
-    if (signupStep === 3) {
-      return emailVerificationStep;
-    }
-    if (signupStep === 4) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Business Information")}
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label htmlFor="businessName" className="text-sm font-medium">Name of Business <span className="text-destructive">*</span></label>
-              <Input id="businessName" type="text" placeholder="Enter business name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="h-11" required disabled={loading} />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="businessCategory" className="text-sm font-medium">Business Category <span className="text-destructive">*</span></label>
-              <Select value={businessCategory} onValueChange={setBusinessCategory} disabled={loading} required>
-                <SelectTrigger className="h-11"><SelectValue placeholder="Select a category" /></SelectTrigger>
-                <SelectContent className="bg-background z-[100] max-h-[300px]" position="popper">
-                  {businessCategories.map((cat) => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {navButtons(false)}
-          </div>
-          {signInLink}
-        </div>
-      );
-    }
-    if (signupStep === 5) {
-      return (
-        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
-          {stepHeader("Address Details")}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {addressFields}
-            {navButtons(true)}
-          </form>
-          {signInLink}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // --- Render sign-up form steps based on account type ---
   const renderSignupFormSteps = () => {
-    switch (accountType) {
-      case "individual": return renderIndividualSteps();
-      case "brand": return renderBrandSteps();
-      case "business": return renderBusinessSteps();
-      default: return null;
+    if (signupStep === 2) {
+      return (
+        <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
+          {stepHeader(accountType === "individual" ? "Personal Information" : "Business Information")}
+          <div className="space-y-5">
+            {accountType === "business" && businessFormFields}
+            {accountType === "individual" && individualFormFields}
+            {contactFields}
+            {passwordFields}
+            {navButtons(false)}
+          </div>
+          {signInLink}
+        </div>
+      );
     }
+    if (signupStep === 3) {
+      return emailVerificationStep;
+    }
+    return null;
   };
 
   return (
@@ -576,7 +450,7 @@ export default function Auth() {
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Directory
       </Button>
-      <div className="w-full max-w-md">
+      <div className={cn("w-full", isSignUp && signupStep >= 2 ? "max-w-lg" : "max-w-md")}>
         {isSignUp && signupStep === 1 ? (
           // Step 1: Account Type Selection
           <div className="bg-card rounded-lg border border-border shadow-sm p-6 sm:p-8 space-y-6">
@@ -591,40 +465,23 @@ export default function Auth() {
                 const Icon = type.icon;
                 const isSelected = accountType === type.value;
                 return (
-                  <div key={type.value}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAccountType(type.value);
-                        if (type.value !== "business") setBusinessOffering("");
-                      }}
-                      className={cn(
-                        "w-full p-4 rounded-lg border text-left transition-all",
-                        isSelected ? "border-foreground bg-muted" : "border-border bg-background hover:border-muted-foreground"
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <Icon className={cn("w-5 h-5 mt-0.5", isSelected ? "text-foreground" : "text-muted-foreground")} />
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{type.title}</h3>
-                          <p className="text-sm text-muted-foreground mt-0.5">{type.description}</p>
-                        </div>
-                      </div>
-                    </button>
-                    {type.value === "business" && isSelected && (
-                      <div className="mt-3 ml-8 space-y-2">
-                        <label className="text-sm font-medium">What do you offer?</label>
-                        <Select value={businessOffering} onValueChange={(val) => setBusinessOffering(val as BusinessOffering)}>
-                          <SelectTrigger className="h-11"><SelectValue placeholder="Select an option" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="product">Product</SelectItem>
-                            <SelectItem value="services">Services</SelectItem>
-                            <SelectItem value="both">Both</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setAccountType(type.value)}
+                    className={cn(
+                      "w-full p-4 rounded-lg border text-left transition-all",
+                      isSelected ? "border-foreground bg-muted" : "border-border bg-background hover:border-muted-foreground"
                     )}
-                  </div>
+                  >
+                    <div className="flex items-start gap-3">
+                      <Icon className={cn("w-5 h-5 mt-0.5", isSelected ? "text-foreground" : "text-muted-foreground")} />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">{type.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-0.5">{type.description}</p>
+                      </div>
+                    </div>
+                  </button>
                 );
               })}
             </div>
@@ -632,7 +489,6 @@ export default function Auth() {
             <Button
               type="button"
               onClick={handleNextStep}
-              disabled={accountType === "business" && !businessOffering}
               className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 font-medium text-base rounded-md"
             >
               Next
