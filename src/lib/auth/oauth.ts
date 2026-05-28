@@ -5,6 +5,45 @@ export type OAuthAccountType = "individual" | "business";
 
 const AUTH_CALLBACK_URL = `${window.location.origin}/auth`;
 
+function getGoogleProviderSetupHint(): string {
+  const projectRef =
+    import.meta.env.VITE_SUPABASE_PROJECT_ID ||
+    import.meta.env.VITE_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+
+  const supabaseCallback = projectRef
+    ? `https://${projectRef}.supabase.co/auth/v1/callback`
+    : "https://<project-ref>.supabase.co/auth/v1/callback";
+
+  return (
+    "Enable Google in Supabase Dashboard → Authentication → Providers → Google. " +
+    `Google Cloud redirect URI: ${supabaseCallback}. ` +
+    `App redirect URL: ${AUTH_CALLBACK_URL} (Authentication → URL Configuration).`
+  );
+}
+
+export function isGoogleProviderSetupError(message: string): boolean {
+  return message.includes("Supabase Dashboard → Authentication → Providers → Google");
+}
+
+/** Maps Supabase auth errors to actionable messages (e.g. provider not enabled). */
+export function getGoogleAuthErrorMessage(error: unknown): string {
+  const message =
+    error && typeof error === "object" && "message" in error
+      ? String((error as { message: string }).message)
+      : error && typeof error === "object" && "msg" in error
+        ? String((error as { msg: string }).msg)
+        : "";
+
+  if (
+    message.includes("provider is not enabled") ||
+    message.includes("Unsupported provider")
+  ) {
+    return getGoogleProviderSetupHint();
+  }
+
+  return message || "Please try again";
+}
+
 export async function signInWithGoogle(options?: {
   accountType?: OAuthAccountType;
   redirectPath?: string;

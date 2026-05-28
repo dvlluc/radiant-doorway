@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
 import { GoogleAuthButton, AuthDivider } from "@/components/auth/GoogleAuthButton";
-import { signInWithGoogle, resolvePostAuthRedirect } from "@/lib/auth/oauth";
+import { signInWithGoogle, resolvePostAuthRedirect, getGoogleAuthErrorMessage, isGoogleProviderSetupError } from "@/lib/auth/oauth";
 import authLogo from "@/assets/bellonecta-logo-white.png";
 
 const authBaseSchema = z.object({
@@ -231,9 +231,10 @@ export default function Auth() {
         redirectPath: redirectFrom,
       });
     } catch (error) {
+      const description = getGoogleAuthErrorMessage(error);
       toast({
-        title: "Google sign in failed",
-        description: error instanceof Error ? error.message : "Please try again",
+        title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign in failed",
+        description,
         variant: "destructive",
       });
       setLoading(false);
