@@ -39,7 +39,7 @@ const principles = [
 
 const About = () => {
   const navigate = useNavigate();
-  const goBack = useSmartBack('/');
+  const goBack = useSmartBack('/directory');
 
   return (
     <>

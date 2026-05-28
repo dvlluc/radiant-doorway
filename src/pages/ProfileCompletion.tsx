@@ -108,7 +108,7 @@ export default function ProfileCompletion() {
   };
 
   const handleSkip = () => {
-    const returnTo = location.state?.from || "/";
+    const returnTo = location.state?.from || "/directory";
     navigate(returnTo);
   };
 
@@ -260,7 +260,7 @@ export default function ProfileCompletion() {
         });
 
         // Redirect to the page they were on before auth, or home
-        const returnTo = location.state?.from || "/";
+        const returnTo = location.state?.from || "/directory";
         navigate(returnTo);
       }
     } catch (error) {

@@ -1,10 +1,9 @@
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, Users, Sparkles, ShoppingBag, ChevronDown } from "lucide-react";
+import { Users, Sparkles, ShoppingBag, ChevronDown } from "lucide-react";
 import { preloadRoute } from "@/lib/routePreload";
 
 const navItems = [
-  { icon: Home, label: "Home", path: "/" },
   { icon: Users, label: "Professionals", path: "/directory" },
   { icon: Sparkles, label: "Explore Styles", path: "/explore-styles" },
   { icon: ShoppingBag, label: "BelloMart", path: "/bellomart" },
@@ -33,7 +32,6 @@ export function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
-            end={item.path === "/"}
             onMouseEnter={() => preloadRoute(item.path)}
             onFocus={() => preloadRoute(item.path)}
             className={({ isActive }) =>

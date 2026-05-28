@@ -1,7 +1,6 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { RoutePageId } from "./routes.config";
 
-const Home = lazy(() => import("./pages/Home"));
 const Directory = lazy(() => import("./pages/Directory"));
 const CreateTestAccounts = lazy(() => import("./pages/CreateTestAccounts"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
@@ -36,7 +35,6 @@ export const routePages: Record<
   RoutePageId,
   LazyExoticComponent<ComponentType<object>>
 > = {
-  home: Home,
   directory: Directory,
   createTestAccounts: CreateTestAccounts,
   adminPanel: AdminPanel,

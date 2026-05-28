@@ -123,7 +123,7 @@ export default function AdminSetup() {
                 There was an error setting up admin access. Please check the console for details.
               </p>
               <Button onClick={() => navigate("/directory")} variant="outline" className="w-full">
-                Go Back Home
+                Go Back
               </Button>
             </div>
           )}

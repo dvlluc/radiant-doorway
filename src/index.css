@@ -150,44 +150,6 @@
     @apply relative min-h-screen w-full overflow-x-hidden;
   }
 
-  .home-bento-label {
-    @apply text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground;
-  }
-
-  .home-bento-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 1024px) {
-    .home-bento-grid {
-      grid-template-columns: repeat(12, minmax(0, 1fr));
-      gap: 1.25rem;
-    }
-
-    .home-bento-pros {
-      grid-column: 1 / span 7;
-      grid-row: span 2;
-    }
-
-    .home-bento-mart {
-      grid-column: 8 / span 5;
-    }
-
-    .home-bento-styles {
-      grid-column: 8 / span 5;
-    }
-
-    .home-bento-join {
-      grid-column: 1 / -1;
-    }
-  }
-
-  .home-full-strip {
-    @apply w-full max-w-none;
-  }
-
   .app-shell::before {
     content: "";
     @apply pointer-events-none fixed inset-0 -z-10;

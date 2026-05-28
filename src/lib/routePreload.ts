@@ -1,6 +1,5 @@
 /** Предзагрузка lazy-чанков */
 const preloaders: Record<string, () => Promise<unknown>> = {
-  "/": () => import("@/pages/Home"),
   "/directory": () => import("@/pages/Directory"),
   "/explore-styles": () => import("@/pages/ExploreStyles"),
   "/bellomart": () => import("@/pages/BelloMart"),

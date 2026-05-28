@@ -119,7 +119,7 @@ const testimonials = [
 const ListYourBusiness = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  const goBack = useSmartBack('/');
+  const goBack = useSmartBack('/directory');
 
   return (
     <div className="min-h-screen bg-background">

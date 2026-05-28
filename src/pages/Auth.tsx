@@ -204,7 +204,7 @@ export default function Auth() {
         } else if (data.user) {
           toast({ title: "Success!", description: "Your account has been created." });
           if (accountType !== "individual") {
-            const from = location.state?.from || "/";
+            const from = location.state?.from || "/directory";
             navigate("/profile-completion", { state: { from } });
           } else {
             setIsSignUp(false);
@@ -657,7 +657,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
       <Button variant="ghost" onClick={() => navigate("/directory")} className="absolute top-4 left-4 z-10">
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Home
+        Back to Directory
       </Button>
       <div className="w-full max-w-md">
         {isSignUp && signupStep === 1 ? (

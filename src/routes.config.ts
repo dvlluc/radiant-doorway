@@ -1,6 +1,5 @@
 /** Идентификаторы lazy-страниц (ключ в routePages) */
 export type RoutePageId =
-  | "home"
   | "directory"
   | "createTestAccounts"
   | "adminPanel"
@@ -40,7 +39,6 @@ export type RouteLayoutId =
   | "mainCompact";
 
 export const ROUTE_PATHS = {
-  home: "/",
   create: "/create",
   directory: "/directory",
   auth: "/auth",
@@ -75,7 +73,8 @@ export const ROUTE_PATHS = {
 
 /** Устаревшие URL → актуальная точка входа */
 export const LEGACY_REDIRECTS: ReadonlyArray<{ from: string; to: string }> = [
-  { from: ROUTE_PATHS.create, to: ROUTE_PATHS.home },
+  { from: "/", to: ROUTE_PATHS.directory },
+  { from: ROUTE_PATHS.create, to: ROUTE_PATHS.directory },
 ];
 
 export type RouteDefinition =
@@ -123,7 +122,6 @@ export const routeGroups: RouteGroupConfig[] = [
       ...LEGACY_REDIRECTS.map(
         (r): RouteDefinition => ({ kind: "redirect", path: r.from, to: r.to }),
       ),
-      { kind: "page", path: ROUTE_PATHS.home, page: "home" },
       { kind: "page", path: ROUTE_PATHS.directory, page: "directory" },
       { kind: "page", path: ROUTE_PATHS.professional, page: "professionalProfile" },
       { kind: "page", path: ROUTE_PATHS.profile, page: "professionalProfile" },
