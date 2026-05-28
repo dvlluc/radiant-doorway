@@ -17,6 +17,8 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
+import { GoogleAuthButton, AuthDivider } from "@/components/auth/GoogleAuthButton";
+import { signInWithGoogle, resolvePostAuthRedirect } from "@/lib/auth/oauth";
 import authLogo from "@/assets/bellonecta-logo-white.png";
 
 const authBaseSchema = z.object({
@@ -124,11 +126,28 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const redirectFrom = (location.state as { from?: string } | null)?.from;
 
   useEffect(() => {
-    if (user && !loading) navigate("/directory");
-  }, [user, loading, navigate]);
+    if (authLoading || !user) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const path = await resolvePostAuthRedirect(user, redirectFrom);
+        if (!cancelled) navigate(path, { replace: true });
+      } catch (error) {
+        console.error("Post-auth redirect failed:", error);
+        if (!cancelled) navigate(redirectFrom || "/directory", { replace: true });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, authLoading, navigate, redirectFrom]);
 
   useEffect(() => {
     if (location.state?.mode) {
@@ -201,6 +220,23 @@ export default function Auth() {
       setLastName("");
       setDisplayName("");
       setTelephone("");
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle({
+        accountType: isSignUp ? accountType : undefined,
+        redirectPath: redirectFrom,
+      });
+    } catch (error) {
+      toast({
+        title: "Google sign in failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+      setLoading(false);
     }
   };
 
@@ -547,6 +583,14 @@ export default function Auth() {
               Next
             </Button>
 
+            <AuthDivider />
+
+            <GoogleAuthButton
+              label="Continue with Google"
+              onClick={handleGoogleAuth}
+              disabled={loading}
+            />
+
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Already have an account? </span>
               <button type="button" onClick={() => setIsSignUp(false)} className="text-accent hover:underline font-medium">
@@ -607,6 +651,15 @@ export default function Auth() {
                 {loading ? "Please wait..." : "Sign In"}
               </Button>
             </form>
+
+            <AuthDivider />
+
+            <GoogleAuthButton
+              label="Sign in with Google"
+              onClick={handleGoogleAuth}
+              disabled={loading}
+            />
+
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
               <button type="button" onClick={() => { setIsSignUp(true); setSignupStep(1); setPassword(""); }} className="text-accent hover:underline font-medium">
