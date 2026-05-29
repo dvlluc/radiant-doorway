@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { clearAuthCallbackHash, hasAuthCallbackHash } from "@/lib/auth/oauth";
 
 interface AuthContextType {
   user: User | null;
@@ -32,65 +33,100 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    const isOAuthCallbackRef = { current: hasAuthCallbackHash() };
 
-    // Get initial session immediately with validation
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+    const applySession = (session: Session | null) => {
       if (!isMounted) return;
-      
-      // SECURITY: Validate session integrity
-      if (session) {
-        const storedVersion = sessionVersionRef.current;
-        const currentVersion = `${session.user.id}-${session.access_token.substring(0, 10)}`;
-        
-        // If we're initializing and there's a stored version that doesn't match, reject
-        if (!isInitializedRef.current && storedVersion && storedVersion !== currentVersion) {
-          console.error("[AuthContext] SECURITY: Session mismatch detected - clearing all sessions");
-          // Clear all possible auth keys
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('supabase.auth')) {
-              localStorage.removeItem(key);
-            }
-          });
-          await supabase.auth.signOut({ scope: 'global' });
-          setSession(null);
-          setUser(null);
-          previousUserIdRef.current = null;
-          sessionVersionRef.current = null;
-          setLoading(false);
-          return;
-        }
-        
-        sessionVersionRef.current = currentVersion;
-      }
-      
-      console.log("[AuthContext] Initial session loaded:", session?.user?.id || "none");
+
       setSession(session);
       setUser(session?.user ?? null);
       previousUserIdRef.current = session?.user?.id ?? null;
+
+      if (session) {
+        sessionVersionRef.current = `${session.user.id}-${session.access_token.substring(0, 10)}`;
+      }
+
       isInitializedRef.current = true;
       setLoading(false);
+
+      if (isOAuthCallbackRef.current) {
+        isOAuthCallbackRef.current = false;
+        clearAuthCallbackHash();
+      }
+    };
+
+    const initAuth = async () => {
+      // Tokens in #hash are applied asynchronously by detectSessionInUrl — wait for INITIAL_SESSION
+      if (isOAuthCallbackRef.current) {
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!isMounted) return;
+
+      if (session) {
+        const storedVersion = sessionVersionRef.current;
+        const currentVersion = `${session.user.id}-${session.access_token.substring(0, 10)}`;
+
+        if (!isInitializedRef.current && storedVersion && storedVersion !== currentVersion) {
+          console.error("[AuthContext] SECURITY: Session mismatch detected - clearing all sessions");
+          Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith("supabase.auth")) {
+              localStorage.removeItem(key);
+            }
+          });
+          await supabase.auth.signOut({ scope: "global" });
+          applySession(null);
+          sessionVersionRef.current = null;
+          return;
+        }
+      }
+
+      console.log("[AuthContext] Initial session loaded:", session?.user?.id || "none");
+      applySession(session);
     };
 
     initAuth();
 
-    // Listen for auth changes - SINGLE listener for entire app
+    const callbackTimeoutId = isOAuthCallbackRef.current
+      ? window.setTimeout(() => {
+          if (!isMounted || isInitializedRef.current) return;
+          console.warn("[AuthContext] OAuth callback timed out");
+          isOAuthCallbackRef.current = false;
+          clearAuthCallbackHash();
+          setLoading(false);
+        }, 10000)
+      : undefined;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
-      
+
+      if (
+        isOAuthCallbackRef.current &&
+        (event === "INITIAL_SESSION" || event === "SIGNED_IN")
+      ) {
+        console.log("[AuthContext] OAuth callback session:", session?.user?.id || "none");
+        applySession(session);
+        return;
+      }
+
       const currentUserId = session?.user?.id ?? null;
       const previousUserId = previousUserIdRef.current;
-      
+
       console.log("[AuthContext] Auth state change:", {
         event,
         currentUserId,
         previousUserId,
-        changed: currentUserId !== previousUserId
+        changed: currentUserId !== previousUserId,
       });
 
-      // SECURITY: Detect unauthorized user switching
-      if (currentUserId !== previousUserId && previousUserId !== null && currentUserId !== null) {
+      if (
+        currentUserId !== previousUserId &&
+        previousUserId !== null &&
+        currentUserId !== null &&
+        !isOAuthCallbackRef.current
+      ) {
         console.error("[AuthContext] SECURITY: Unauthorized user switch detected - blocking");
         // Clear everything and force sign out
         Object.keys(localStorage).forEach(key => {
@@ -122,15 +158,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Only update if user actually changed
       if (currentUserId !== previousUserId) {
         console.log("[AuthContext] User changed, updating state");
-        setSession(session);
-        setUser(session?.user ?? null);
-        previousUserIdRef.current = currentUserId;
-        if (session) {
-          sessionVersionRef.current = `${session.user.id}-${session.access_token.substring(0, 10)}`;
-        }
+        applySession(session);
       } else if (event === "TOKEN_REFRESHED") {
         // Update session for token refresh but don't trigger full reload
         console.log("[AuthContext] Token refreshed, updating session only");
@@ -140,6 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      if (callbackTimeoutId) window.clearTimeout(callbackTimeoutId);
       subscription.unsubscribe();
     };
   }, []);

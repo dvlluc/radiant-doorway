@@ -18,7 +18,17 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
 import { GoogleAuthButton, AuthDivider } from "@/components/auth/GoogleAuthButton";
-import { signInWithGoogle, resolvePostAuthRedirect, getGoogleAuthErrorMessage, isGoogleProviderSetupError } from "@/lib/auth/oauth";
+import {
+  signUpWithGoogle,
+  resolveOAuthSignupRedirect,
+  assertRegisteredForSignIn,
+  isAppUserRegistered,
+  AuthFlowError,
+  getGoogleAuthErrorMessage,
+  isGoogleProviderSetupError,
+  hasAuthCallbackHash,
+  getAuthCallbackError,
+} from "@/lib/auth/oauth";
 import authLogo from "@/assets/bellonecta-logo-white.png";
 
 const authBaseSchema = z.object({
@@ -127,7 +137,20 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-  const redirectFrom = (location.state as { from?: string } | null)?.from;
+  const authState = location.state as { from?: string; returnTo?: string } | null;
+  const redirectFrom = authState?.from ?? authState?.returnTo;
+  const isOAuthCallback = hasAuthCallbackHash();
+
+  useEffect(() => {
+    const callbackError = getAuthCallbackError();
+    if (callbackError) {
+      toast({
+        title: "Sign in failed",
+        description: callbackError,
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -135,19 +158,50 @@ export default function Auth() {
     let cancelled = false;
 
     void (async () => {
+      const isOAuthSignup = sessionStorage.getItem("oauth_flow") === "signup" || isOAuthCallback;
+
       try {
-        const path = await resolvePostAuthRedirect(user, redirectFrom);
-        if (!cancelled) navigate(path, { replace: true });
-      } catch (error) {
-        console.error("Post-auth redirect failed:", error);
+        if (isOAuthSignup) {
+          const path = await resolveOAuthSignupRedirect(user, redirectFrom);
+          if (!cancelled) navigate(path, { replace: true });
+          return;
+        }
+
+        await assertRegisteredForSignIn(user);
         if (!cancelled) navigate(redirectFrom || "/directory", { replace: true });
+      } catch (error) {
+        console.error("Post-auth failed:", error);
+        if (cancelled) return;
+
+        if (error instanceof AuthFlowError) {
+          const titles: Record<AuthFlowError["code"], string> = {
+            NOT_REGISTERED: "Аккаунт не зарегистрирован",
+            ALREADY_REGISTERED: "Аккаунт уже существует",
+            SIGNUP_ONLY: "Вход через Google недоступен",
+          };
+          toast({
+            title: titles[error.code],
+            description: error.message,
+            variant: "destructive",
+          });
+          setIsSignUp(error.code === "NOT_REGISTERED");
+          setSignupStep(1);
+          return;
+        }
+
+        await supabase.auth.signOut();
+        toast({
+          title: "Sign in failed",
+          description: "Could not complete sign in. Please try again.",
+          variant: "destructive",
+        });
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, navigate, redirectFrom]);
+  }, [user, authLoading, navigate, redirectFrom, isOAuthCallback, toast]);
 
   useEffect(() => {
     if (location.state?.mode) {
@@ -223,17 +277,17 @@ export default function Auth() {
     }
   };
 
-  const handleGoogleAuth = async () => {
+  const handleGoogleSignUp = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle({
-        accountType: isSignUp ? accountType : undefined,
+      await signUpWithGoogle({
+        accountType,
         redirectPath: redirectFrom,
       });
     } catch (error) {
       const description = getGoogleAuthErrorMessage(error);
       toast({
-        title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign in failed",
+        title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign up failed",
         description,
         variant: "destructive",
       });
@@ -275,7 +329,7 @@ export default function Auth() {
           password,
         });
 
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
           email: validatedData.email,
           password: validatedData.password,
         });
@@ -285,6 +339,15 @@ export default function Auth() {
             description: error.message === "Invalid login credentials" ? "Invalid email or password" : error.message,
             variant: "destructive",
           });
+        } else if (signInData.user && !(await isAppUserRegistered(signInData.user.id))) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Аккаунт не зарегистрирован",
+            description: "Сначала создайте аккаунт через регистрацию.",
+            variant: "destructive",
+          });
+          setIsSignUp(true);
+          setSignupStep(1);
         } else {
           toast({ title: "Welcome back!", description: "You have successfully signed in." });
         }
@@ -534,6 +597,14 @@ export default function Auth() {
     return null;
   };
 
+  if (authLoading || (isOAuthCallback && !user)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <p className="text-muted-foreground">Signing you in...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
       <Button variant="ghost" onClick={() => navigate("/directory")} className="absolute top-4 left-4 z-10">
@@ -587,8 +658,8 @@ export default function Auth() {
             <AuthDivider />
 
             <GoogleAuthButton
-              label="Continue with Google"
-              onClick={handleGoogleAuth}
+              label="Sign up with Google"
+              onClick={handleGoogleSignUp}
               disabled={loading}
             />
 
@@ -652,14 +723,6 @@ export default function Auth() {
                 {loading ? "Please wait..." : "Sign In"}
               </Button>
             </form>
-
-            <AuthDivider />
-
-            <GoogleAuthButton
-              label="Sign in with Google"
-              onClick={handleGoogleAuth}
-              disabled={loading}
-            />
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>

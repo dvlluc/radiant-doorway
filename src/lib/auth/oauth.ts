@@ -5,6 +5,31 @@ export type OAuthAccountType = "individual" | "business";
 
 const AUTH_CALLBACK_URL = `${window.location.origin}/auth`;
 
+function parseAuthHashParams() {
+  const raw = window.location.hash.replace(/^#/, "");
+  return raw ? new URLSearchParams(raw) : null;
+}
+
+/** OAuth / magic-link redirect puts tokens in the URL hash (e.g. /auth#access_token=...). */
+export function hasAuthCallbackHash(): boolean {
+  const params = parseAuthHashParams();
+  return Boolean(params?.has("access_token") || params?.has("error"));
+}
+
+export function getAuthCallbackError(): string | null {
+  const params = parseAuthHashParams();
+  if (!params) return null;
+  return params.get("error_description") || params.get("error");
+}
+
+export function clearAuthCallbackHash() {
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${window.location.pathname}${window.location.search}`,
+  );
+}
+
 function getGoogleProviderSetupHint(): string {
   const projectRef =
     import.meta.env.VITE_SUPABASE_PROJECT_ID ||
@@ -44,17 +69,26 @@ export function getGoogleAuthErrorMessage(error: unknown): string {
   return message || "Please try again";
 }
 
-export async function signInWithGoogle(options?: {
-  accountType?: OAuthAccountType;
+/** App registration = user completed signup (role row exists). */
+export async function isAppUserRegistered(userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return Boolean(data);
+}
+
+/** Sign-up only — starts Google OAuth registration flow. */
+export async function signUpWithGoogle(options: {
+  accountType: OAuthAccountType;
   redirectPath?: string;
 }) {
-  if (options?.accountType) {
-    sessionStorage.setItem("oauth_account_type", options.accountType);
-  } else {
-    sessionStorage.removeItem("oauth_account_type");
-  }
+  sessionStorage.setItem("oauth_flow", "signup");
+  sessionStorage.setItem("oauth_account_type", options.accountType);
 
-  if (options?.redirectPath) {
+  if (options.redirectPath) {
     sessionStorage.setItem("oauth_redirect", options.redirectPath);
   } else {
     sessionStorage.removeItem("oauth_redirect");
@@ -68,9 +102,11 @@ export async function signInWithGoogle(options?: {
         access_type: "online",
         prompt: "select_account",
       },
-      ...(options?.accountType && {
-        data: { account_type: options.accountType },
-      }),
+      data: { account_type: options.accountType },
+    } as {
+      redirectTo: string;
+      queryParams: Record<string, string>;
+      data: { account_type: OAuthAccountType };
     },
   });
 
@@ -133,31 +169,62 @@ async function syncOAuthUser(user: User, accountType: OAuthAccountType) {
   }
 }
 
-export async function resolvePostAuthRedirect(
+export class AuthFlowError extends Error {
+  constructor(
+    readonly code: "NOT_REGISTERED" | "ALREADY_REGISTERED" | "SIGNUP_ONLY",
+    message: string,
+  ) {
+    super(message);
+    this.name = "AuthFlowError";
+  }
+}
+
+/** After email/password sign-in — only allow users who completed registration. */
+export async function assertRegisteredForSignIn(user: User): Promise<void> {
+  if (await isAppUserRegistered(user.id)) return;
+  await supabase.auth.signOut();
+  throw new AuthFlowError(
+    "NOT_REGISTERED",
+    "This account is not registered. Please create an account first.",
+  );
+}
+
+/** After Google OAuth callback from sign-up flow only. */
+export async function resolveOAuthSignupRedirect(
   user: User,
   defaultRedirect?: string,
 ): Promise<string> {
+  const oauthFlow = sessionStorage.getItem("oauth_flow");
   const storedAccountType = sessionStorage.getItem("oauth_account_type") as OAuthAccountType | null;
   const storedRedirect = sessionStorage.getItem("oauth_redirect");
+  sessionStorage.removeItem("oauth_flow");
   sessionStorage.removeItem("oauth_account_type");
   sessionStorage.removeItem("oauth_redirect");
+
+  if (oauthFlow !== "signup") {
+    await supabase.auth.signOut();
+    throw new AuthFlowError(
+      "SIGNUP_ONLY",
+      "Google sign-in is disabled. Use email and password to sign in.",
+    );
+  }
+
+  if (await isAppUserRegistered(user.id)) {
+    await supabase.auth.signOut();
+    throw new AuthFlowError(
+      "ALREADY_REGISTERED",
+      "This account is already registered. Please sign in with your email.",
+    );
+  }
 
   const accountType: OAuthAccountType =
     user.user_metadata?.account_type === "business" || storedAccountType === "business"
       ? "business"
       : "individual";
 
-  const [{ data: existingRole }, { data: profile }] = await Promise.all([
-    supabase.from("user_roles").select("account_type").eq("user_id", user.id).maybeSingle(),
-    supabase.from("profiles").select("first_name, display_name").eq("id", user.id).maybeSingle(),
-  ]);
+  await syncOAuthUser(user, accountType);
 
-  const resolvedType = existingRole?.account_type ?? accountType;
-  const needsSync = !existingRole || (!profile?.first_name && !profile?.display_name);
-
-  if (needsSync) {
-    await syncOAuthUser(user, resolvedType === "business" ? "business" : accountType);
-  }
+  const resolvedType = accountType;
 
   if (resolvedType === "business") {
     const { data: businessProfile } = await supabase
