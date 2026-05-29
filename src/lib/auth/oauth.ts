@@ -92,43 +92,11 @@ function getOAuthNameParts(user: User) {
   };
 }
 
-const PROFILE_WAIT_MS = 200;
-const PROFILE_WAIT_ATTEMPTS = 8;
-
-async function waitForProfileRow(userId: string): Promise<boolean> {
-  for (let attempt = 0; attempt < PROFILE_WAIT_ATTEMPTS; attempt += 1) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (data) return true;
-    await new Promise((resolve) => setTimeout(resolve, PROFILE_WAIT_MS));
-  }
-
-  return false;
-}
-
-/** Fills missing profile fields from Google user_metadata without overwriting user edits. */
-async function syncOAuthProfileData(user: User) {
+async function syncOAuthUser(user: User, accountType: OAuthAccountType) {
   const { firstName, lastName, displayName, avatarUrl } = getOAuthNameParts(user);
-  const hasOAuthData = Boolean(firstName || lastName || displayName || avatarUrl || user.email);
-  if (!hasOAuthData) return;
 
-  const { data: existing, error: readError } = await supabase
-    .from("profiles")
-    .select("id, email, first_name, last_name, display_name, avatar_url")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (readError) {
-    console.error("[oauth] Failed to read profile:", readError);
-    return;
-  }
-
-  if (!existing) {
-    const { error: insertError } = await supabase.from("profiles").insert({
+  await supabase.from("profiles").upsert(
+    {
       id: user.id,
       username: user.email?.split("@")[0] ?? "user",
       email: user.email,
@@ -136,92 +104,32 @@ async function syncOAuthProfileData(user: User) {
       last_name: lastName || null,
       display_name: displayName,
       avatar_url: avatarUrl,
-    });
+    },
+    { onConflict: "id" },
+  );
 
-    if (insertError) console.error("[oauth] Profile insert failed:", insertError);
-    return;
-  }
-
-  const updates: {
-    email?: string | null;
-    first_name?: string | null;
-    last_name?: string | null;
-    display_name?: string | null;
-    avatar_url?: string | null;
-  } = {};
-
-  if (!existing.email && user.email) updates.email = user.email;
-  if (!existing.first_name && firstName) updates.first_name = firstName;
-  if (!existing.last_name && lastName) updates.last_name = lastName;
-  if (!existing.display_name && displayName) updates.display_name = displayName;
-  if (!existing.avatar_url && avatarUrl) updates.avatar_url = avatarUrl;
-
-  if (Object.keys(updates).length === 0) return;
-
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update(updates)
-    .eq("id", user.id);
-
-  if (updateError) console.error("[oauth] Profile update failed:", updateError);
-}
-
-async function ensureBusinessProfileForOAuth(user: User) {
-  const { firstName, lastName } = getOAuthNameParts(user);
-
-  const { data: existing } = await supabase
-    .from("business_profiles")
-    .select("user_id, first_name, last_name, email")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!existing) {
-    const { error } = await supabase.from("business_profiles").insert({
-      user_id: user.id,
-      email: user.email ?? "",
-      business_name: "",
-      address: "",
-      first_name: firstName,
-      last_name: lastName,
-    });
-
-    if (error) console.error("[oauth] Business profile insert failed:", error);
-    return;
-  }
-
-  const updates: {
-    email?: string;
-    first_name?: string;
-    last_name?: string;
-  } = {};
-
-  if (!existing.email && user.email) updates.email = user.email;
-  if (!existing.first_name && firstName) updates.first_name = firstName;
-  if (!existing.last_name && lastName) updates.last_name = lastName;
-
-  if (Object.keys(updates).length === 0) return;
-
-  const { error } = await supabase
-    .from("business_profiles")
-    .update(updates)
-    .eq("user_id", user.id);
-
-  if (error) console.error("[oauth] Business profile update failed:", error);
-}
-
-async function provisionNewOAuthUser(user: User, accountType: OAuthAccountType) {
-  await waitForProfileRow(user.id);
-  await syncOAuthProfileData(user);
-
-  const { error: roleError } = await supabase.from("user_roles").upsert(
+  await supabase.from("user_roles").upsert(
     { user_id: user.id, account_type: accountType },
     { onConflict: "user_id" },
   );
 
-  if (roleError) console.error("[oauth] User role upsert failed:", roleError);
-
   if (accountType === "business") {
-    await ensureBusinessProfileForOAuth(user);
+    const { data: businessProfile } = await supabase
+      .from("business_profiles")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!businessProfile) {
+      await supabase.from("business_profiles").insert({
+        user_id: user.id,
+        email: user.email ?? "",
+        business_name: "",
+        address: "",
+        first_name: firstName,
+        last_name: lastName,
+      });
+    }
   }
 }
 
@@ -239,25 +147,17 @@ export async function resolvePostAuthRedirect(
       ? "business"
       : "individual";
 
-  const { data: existingRole } = await supabase
-    .from("user_roles")
-    .select("account_type")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!existingRole) {
-    await provisionNewOAuthUser(user, accountType);
-  } else {
-    await waitForProfileRow(user.id);
-    await syncOAuthProfileData(user);
-
-    const resolvedType = existingRole.account_type ?? accountType;
-    if (resolvedType === "business") {
-      await ensureBusinessProfileForOAuth(user);
-    }
-  }
+  const [{ data: existingRole }, { data: profile }] = await Promise.all([
+    supabase.from("user_roles").select("account_type").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("first_name, display_name").eq("id", user.id).maybeSingle(),
+  ]);
 
   const resolvedType = existingRole?.account_type ?? accountType;
+  const needsSync = !existingRole || (!profile?.first_name && !profile?.display_name);
+
+  if (needsSync) {
+    await syncOAuthUser(user, resolvedType === "business" ? "business" : accountType);
+  }
 
   if (resolvedType === "business") {
     const { data: businessProfile } = await supabase
