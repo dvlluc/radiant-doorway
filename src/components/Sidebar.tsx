@@ -36,7 +36,7 @@ export function Sidebar() {
   const navItemClass = (isActive: boolean) =>
     cn(
       "flex items-center rounded-lg transition-colors min-w-0",
-      collapsed ? "justify-center px-0 py-3 gap-0" : "gap-4 px-3 py-3",
+      "justify-left gap-4 px-3 py-3",
       "hover:bg-muted/50",
       isActive && "text-primary"
     );
