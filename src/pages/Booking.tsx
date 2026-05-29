@@ -35,7 +35,7 @@ export default function Booking() {
   const { id: rawId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const goBack = useSmartBack('/directory');
+  const goBack = useSmartBack('/explore-styles');
   const { toast } = useToast();
   const { user } = useAuth();
 

@@ -159,7 +159,7 @@ const More = () => {
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
-                navigate("/directory");
+                navigate("/explore-styles");
               }}
               className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border border-destructive/20 bg-card hover:bg-destructive/5 transition-colors"
             >

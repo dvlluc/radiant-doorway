@@ -1709,7 +1709,7 @@ export default function ProfessionalProfile() {
           <CardContent className="p-12 text-center">
             <h3 className="text-xl font-semibold mb-2">Profile Not Found</h3>
             <p className="text-muted-foreground mb-4">This profile doesn't exist or has been removed.</p>
-            <Button onClick={() => navigate("/directory")}>Go to Directory</Button>
+            <Button onClick={() => navigate("/explore-styles")}>Go to Home</Button>
           </CardContent>
         </Card>
       </div>

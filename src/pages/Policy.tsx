@@ -14,7 +14,7 @@ const Policy = () => {
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-4xl mx-auto">
           <button
-            onClick={() => navigate('/directory')}
+            onClick={() => navigate('/explore-styles')}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

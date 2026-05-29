@@ -51,7 +51,7 @@ export default function AdminPanel() {
         if (!data) {
           // Not an admin, redirect to home
           console.log("[AdminPanel] User is not an admin, redirecting to home");
-          navigate("/directory");
+          navigate("/explore-styles");
           return;
         }
 
@@ -69,7 +69,7 @@ export default function AdminPanel() {
         setIsAdmin(true);
       } catch (error) {
         console.error("[AdminPanel] Error checking admin status:", error);
-        navigate("/directory");
+        navigate("/explore-styles");
       } finally {
         setChecking(false);
       }

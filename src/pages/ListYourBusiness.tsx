@@ -32,7 +32,13 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import heroImage from "@/assets/list-business-hero.jpg";
 
-const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
+const AnimatedCounter = ({
+  target,
+  suffix = "",
+}: {
+  target: number;
+  suffix?: string;
+}) => {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const hasAnimated = useRef(false);
@@ -57,15 +63,19 @@ const AnimatedCounter = ({ target, suffix = "" }: { target: number; suffix?: str
           }, duration / steps);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, [target]);
 
   return (
-    <div ref={ref} className="text-4xl md:text-5xl font-bold font-playfair text-foreground">
-      {count.toLocaleString()}{suffix}
+    <div
+      ref={ref}
+      className="text-4xl md:text-5xl font-bold font-playfair text-foreground"
+    >
+      {count.toLocaleString()}
+      {suffix}
     </div>
   );
 };
@@ -89,10 +99,27 @@ const benefits = [
 ];
 
 const steps = [
-  { icon: UserPlus, title: "Create Your Account", description: "Sign up in under 2 minutes — it's completely free." },
-  { icon: ListPlus, title: "Add Your Services", description: "List what you offer with pricing, photos, and details." },
-  { icon: Clock, title: "Set Your Schedule", description: "Define your availability and let clients book around your life." },
-  { icon: Zap, title: "Get Bookings Instantly", description: "Start receiving bookings from verified clients right away." },
+  {
+    icon: UserPlus,
+    title: "Create Your Account",
+    description: "Sign up in under 2 minutes — it's completely free.",
+  },
+  {
+    icon: ListPlus,
+    title: "Add Your Services",
+    description: "List what you offer with pricing, photos, and details.",
+  },
+  {
+    icon: Clock,
+    title: "Set Your Schedule",
+    description:
+      "Define your availability and let clients book around your life.",
+  },
+  {
+    icon: Zap,
+    title: "Get Bookings Instantly",
+    description: "Start receiving bookings from verified clients right away.",
+  },
 ];
 
 const testimonials = [
@@ -105,13 +132,15 @@ const testimonials = [
   {
     name: "Sophie Laurent",
     role: "Lash & Brow Artist",
-    quote: "The profile showcase is stunning. My clients love how easy it is to book with me.",
+    quote:
+      "The profile showcase is stunning. My clients love how easy it is to book with me.",
     rating: 5,
   },
   {
     name: "Marcus Chen",
     role: "Master Barber",
-    quote: "Finally a platform that understands what beauty professionals actually need.",
+    quote:
+      "Finally a platform that understands what beauty professionals actually need.",
     rating: 5,
   },
 ];
@@ -119,7 +148,7 @@ const testimonials = [
 const ListYourBusiness = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
-  const goBack = useSmartBack('/directory');
+  const goBack = useSmartBack("/explore-styles");
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +161,10 @@ const ListYourBusiness = () => {
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
         {/* Top nav overlay */}
         <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-6 py-5">
-          <button onClick={goBack} className="text-white hover:text-white/80 transition-colors">
+          <button
+            onClick={goBack}
+            className="text-white hover:text-white/80 transition-colors"
+          >
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div />
@@ -141,7 +173,9 @@ const ListYourBusiness = () => {
             size="sm"
             className="bg-white/20 backdrop-blur-sm text-white border border-white/30 hover:bg-white/30 rounded-full px-6"
           >
-            <Link to="/auth" state={{ mode: "signup" }}>Get Started</Link>
+            <Link to="/auth" state={{ mode: "signup" }}>
+              Get Started
+            </Link>
           </Button>
         </div>
 
@@ -164,7 +198,8 @@ const ListYourBusiness = () => {
               Get clients from your work
             </h1>
             <p className="text-lg md:text-xl text-white/80 mb-10 leading-relaxed max-w-lg">
-              Showcase your styles, get discovered by new clients, and take bookings seamlessly — all in one platform.
+              Showcase your styles, get discovered by new clients, and take
+              bookings seamlessly — all in one platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
@@ -182,7 +217,9 @@ const ListYourBusiness = () => {
                 size="lg"
                 className="border-white/40 text-white bg-transparent hover:bg-white/10 hover:text-white px-8 py-6 text-base rounded-lg backdrop-blur-sm"
               >
-                <Link to="/auth" state={{ mode: "signup" }}>List Your Business</Link>
+                <Link to="/auth" state={{ mode: "signup" }}>
+                  List Your Business
+                </Link>
               </Button>
             </div>
           </div>
@@ -207,8 +244,12 @@ const ListYourBusiness = () => {
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                     <benefit.icon className="w-7 h-7 text-amber-600" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">{benefit.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{benefit.description}</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-3">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {benefit.description}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -226,11 +267,19 @@ const ListYourBusiness = () => {
             From inspiration to booking in one step
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-2xl mx-auto">
-            Clients see the look, understand the price, and book instantly — without back-and-forth.
+            Clients see the look, understand the price, and book instantly —
+            without back-and-forth.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-4xl mx-auto mt-12">
-            {["Clear pricing", "Real-time availability", "Seamless booking experience"].map((item, i) => (
-              <div key={item} className="flex flex-col items-center text-center">
+            {[
+              "Clear pricing",
+              "Real-time availability",
+              "Seamless booking experience",
+            ].map((item, i) => (
+              <div
+                key={item}
+                className="flex flex-col items-center text-center"
+              >
                 <span className="font-playfair text-3xl md:text-4xl font-bold text-amber-600 mb-3">
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -251,15 +300,24 @@ const ListYourBusiness = () => {
           <div className="relative">
             <div className="bg-card border border-border/50 rounded-2xl p-10 md:p-14 text-center shadow-sm">
               <div className="flex justify-center gap-1 mb-6">
-                {Array.from({ length: testimonials[currentTestimonial].rating }).map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-amber-500 fill-amber-500" />
+                {Array.from({
+                  length: testimonials[currentTestimonial].rating,
+                }).map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-5 h-5 text-amber-500 fill-amber-500"
+                  />
                 ))}
               </div>
               <p className="text-xl md:text-2xl text-foreground font-playfair italic leading-relaxed mb-8">
                 "{testimonials[currentTestimonial].quote}"
               </p>
-              <p className="font-semibold text-foreground">{testimonials[currentTestimonial].name}</p>
-              <p className="text-muted-foreground text-sm">{testimonials[currentTestimonial].role}</p>
+              <p className="font-semibold text-foreground">
+                {testimonials[currentTestimonial].name}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                {testimonials[currentTestimonial].role}
+              </p>
             </div>
             <div className="flex justify-center gap-3 mt-8">
               <Button
@@ -267,7 +325,10 @@ const ListYourBusiness = () => {
                 size="icon"
                 className="rounded-full w-10 h-10"
                 onClick={() =>
-                  setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+                  setCurrentTestimonial(
+                    (prev) =>
+                      (prev - 1 + testimonials.length) % testimonials.length,
+                  )
                 }
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -285,7 +346,11 @@ const ListYourBusiness = () => {
                 variant="outline"
                 size="icon"
                 className="rounded-full w-10 h-10"
-                onClick={() => setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)}
+                onClick={() =>
+                  setCurrentTestimonial(
+                    (prev) => (prev + 1) % testimonials.length,
+                  )
+                }
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -313,10 +378,16 @@ const ListYourBusiness = () => {
             {steps.map((step, index) => (
               <div key={index} className="text-center group">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl font-bold text-amber-600">{index + 1}</span>
+                  <span className="text-2xl font-bold text-amber-600">
+                    {index + 1}
+                  </span>
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{step.description}</p>
+                <h3 className="font-semibold text-foreground mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {step.description}
+                </p>
               </div>
             ))}
           </div>
@@ -333,25 +404,38 @@ const ListYourBusiness = () => {
                 Seamless Client Experience
               </h3>
               <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                From discovery to booking to review — every touchpoint is designed to delight your
-                clients and keep them coming back.
+                From discovery to booking to review — every touchpoint is
+                designed to delight your clients and keep them coming back.
               </p>
               <ul className="space-y-3">
-                {["One-tap booking", "Automated reminders", "Secure payments", "Post-visit reviews"].map(
-                  (item) => (
-                    <li key={item} className="flex items-center gap-3 text-foreground">
-                      <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-amber-500" />
-                      </div>
-                      {item}
-                    </li>
-                  )
-                )}
+                {[
+                  "One-tap booking",
+                  "Automated reminders",
+                  "Secure payments",
+                  "Post-visit reviews",
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-center gap-3 text-foreground"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    </div>
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
             <div className="relative">
               <div className="rounded-2xl overflow-hidden aspect-[4/3]">
-                <img src={clientExperienceImg} alt="Seamless client experience" className="w-full h-full object-cover" loading="lazy" width={640} height={512} />
+                <img
+                  src={clientExperienceImg}
+                  alt="Seamless client experience"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  width={640}
+                  height={512}
+                />
               </div>
             </div>
           </div>
@@ -360,7 +444,14 @@ const ListYourBusiness = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 relative">
               <div className="rounded-2xl overflow-hidden aspect-[4/3]">
-                <img src={dashboardGrowthImg} alt="Dashboard designed for growth" className="w-full h-full object-cover" loading="lazy" width={640} height={512} />
+                <img
+                  src={dashboardGrowthImg}
+                  alt="Dashboard designed for growth"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  width={640}
+                  height={512}
+                />
               </div>
             </div>
             <div className="order-1 lg:order-2">
@@ -368,20 +459,26 @@ const ListYourBusiness = () => {
                 Dashboard Designed for Growth
               </h3>
               <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                Track performance, manage your team, and unlock insights — all from one beautifully
-                crafted dashboard.
+                Track performance, manage your team, and unlock insights — all
+                from one beautifully crafted dashboard.
               </p>
               <ul className="space-y-3">
-                {["Real-time analytics", "Team management", "Revenue tracking", "Client insights"].map(
-                  (item) => (
-                    <li key={item} className="flex items-center gap-3 text-foreground">
-                      <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-amber-500" />
-                      </div>
-                      {item}
-                    </li>
-                  )
-                )}
+                {[
+                  "Real-time analytics",
+                  "Team management",
+                  "Revenue tracking",
+                  "Client insights",
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-center gap-3 text-foreground"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    </div>
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -390,13 +487,17 @@ const ListYourBusiness = () => {
 
       {/* Ecosystem Section (cream background retained) */}
       <section className="py-24 px-6 relative overflow-hidden">
-        <div className="absolute inset-0" style={{ backgroundColor: 'hsl(45, 60%, 94%)' }} />
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: "hsl(45, 60%, 94%)" }}
+        />
         <div className="relative max-w-6xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-playfair font-bold text-foreground mb-4 text-center">
             More than just bookings
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-16">
-            Unlock a world of opportunities across the BelloNecta ecosystem — coming soon.
+            Unlock a world of opportunities across the BelloNecta ecosystem —
+            coming soon.
           </p>
           <Carousel
             opts={{ align: "start", loop: true }}
@@ -405,16 +506,36 @@ const ListYourBusiness = () => {
           >
             <CarouselContent className="-ml-4">
               {[
-                { title: "Marketplace", description: "Sell products through your content" },
-                { title: "Community", description: "Connect with other professionals and new clients" },
-                { title: "Education", description: "Grow your skills and business" },
-                { title: "Innovation", description: "Future tools powered by AI and VR" },
+                {
+                  title: "Marketplace",
+                  description: "Sell products through your content",
+                },
+                {
+                  title: "Community",
+                  description:
+                    "Connect with other professionals and new clients",
+                },
+                {
+                  title: "Education",
+                  description: "Grow your skills and business",
+                },
+                {
+                  title: "Innovation",
+                  description: "Future tools powered by AI and VR",
+                },
               ].map((item, index) => (
-                <CarouselItem key={index} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                <CarouselItem
+                  key={index}
+                  className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3"
+                >
                   <Card className="border border-border/50 bg-card h-full">
                     <CardContent className="p-8 text-center">
-                      <h3 className="text-lg font-semibold text-foreground mb-2 text-center">{item.title}</h3>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{item.description}</p>
+                      <h3 className="text-lg font-semibold text-foreground mb-2 text-center">
+                        {item.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        {item.description}
+                      </p>
                     </CardContent>
                   </Card>
                 </CarouselItem>
@@ -440,7 +561,9 @@ const ListYourBusiness = () => {
             size="lg"
             className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-10 py-6 text-lg font-semibold rounded-lg shadow-xl hover:shadow-2xl transition-all"
           >
-            <Link to="/auth" state={{ mode: "signup" }}>Join BelloNecta Now</Link>
+            <Link to="/auth" state={{ mode: "signup" }}>
+              Join BelloNecta Now
+            </Link>
           </Button>
         </div>
       </section>
@@ -450,39 +573,126 @@ const ListYourBusiness = () => {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">Platform</h4>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">
+                Platform
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/about" className="text-background/70 hover:text-background transition-colors">About</Link></li>
-                <li><Link to="/directory" className="text-background/70 hover:text-background transition-colors">Directory</Link></li>
-                <li><Link to="/impact" className="text-background/70 hover:text-background transition-colors">Impact</Link></li>
+                <li>
+                  <Link
+                    to="/about"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/directory"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Directory
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/impact"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Impact
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">Support</h4>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">
+                Support
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/help" className="text-background/70 hover:text-background transition-colors">Help Centre</Link></li>
-                <li><Link to="/help" className="text-background/70 hover:text-background transition-colors">Contact Us</Link></li>
+                <li>
+                  <Link
+                    to="/help"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Help Centre
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/help"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">Legal</h4>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">
+                Legal
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/terms" className="text-background/70 hover:text-background transition-colors">Terms of Service</Link></li>
-                <li><Link to="/privacy" className="text-background/70 hover:text-background transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/refund" className="text-background/70 hover:text-background transition-colors">Refund Policy</Link></li>
+                <li>
+                  <Link
+                    to="/terms"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/privacy"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/refund"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Refund Policy
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">Resources</h4>
+              <h4 className="font-semibold mb-4 text-sm uppercase tracking-wider text-background/60">
+                Resources
+              </h4>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/policies" className="text-background/70 hover:text-background transition-colors">Policies Hub</Link></li>
-                <li><Link to="/beta" className="text-background/70 hover:text-background transition-colors">Beta Program</Link></li>
-                <li><Link to="/bello-partnership" className="text-background/70 hover:text-background transition-colors">Partnership</Link></li>
+                <li>
+                  <Link
+                    to="/policies"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Policies Hub
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/beta"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Beta Program
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/bello-partnership"
+                    className="text-background/70 hover:text-background transition-colors"
+                  >
+                    Partnership
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-background/10 pt-8 text-center">
-            <p className="text-background/50 text-sm">© 2026 BelloNecta. All rights reserved.</p>
+            <p className="text-background/50 text-sm">
+              © 2026 BelloNecta. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

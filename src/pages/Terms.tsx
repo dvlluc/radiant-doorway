@@ -19,7 +19,7 @@ const Terms = () => {
         <main className="flex-1 bg-background">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
               <button
-                onClick={() => navigate('/directory')}
+                onClick={() => navigate('/explore-styles')}
                 className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 sm:mb-6 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />

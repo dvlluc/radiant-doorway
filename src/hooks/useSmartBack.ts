@@ -25,18 +25,18 @@ export function useSmartBack(fallbackPath?: string) {
     } else if (path.startsWith('/jobs/')) {
       navigate('/jobs');
     } else if (path.startsWith('/professional/') || path.startsWith('/profile/')) {
-      navigate('/directory');
+      navigate('/explore-styles');
     } else if (path.startsWith('/booking/')) {
-      navigate('/directory');
+      navigate('/explore-styles');
     } else if (path.startsWith('/my-tickets')) {
       navigate('/events');
     } else if (path.startsWith('/ticket-scanner')) {
       navigate('/events');
     } else if (path.startsWith('/account')) {
-      navigate('/directory');
+      navigate('/explore-styles');
     } else {
       // Default fallback to home
-      navigate('/directory');
+      navigate('/explore-styles');
     }
   };
 

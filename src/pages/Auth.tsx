@@ -265,7 +265,7 @@ export default function Auth() {
   const completeSignupFlow = () => {
     toast({ title: "Success!", description: "Your account has been created. Please verify your email to continue." });
     if (accountType !== "individual") {
-      const from = location.state?.from || "/directory";
+      const from = location.state?.from || "/explore-styles";
       navigate("/profile-completion", { state: { from } });
     } else {
       setIsSignUp(false);
@@ -618,9 +618,9 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
-      <Button variant="ghost" onClick={() => navigate("/directory")} className="absolute top-4 left-4 z-10">
+      <Button variant="ghost" onClick={() => navigate("/explore-styles")} className="absolute top-4 left-4 z-10">
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Directory
+        Back to Home
       </Button>
       <div className={cn("w-full", isSignUp && signupStep >= 2 ? "max-w-lg" : "max-w-md")}>
         {isSignUp && signupStep === 1 ? (

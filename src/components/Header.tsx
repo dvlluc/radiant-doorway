@@ -52,7 +52,7 @@ export const Header = memo(function Header() {
     });
     // Sign out globally to clear all sessions
     await supabase.auth.signOut({ scope: "global" });
-    navigate("/directory");
+    navigate("/explore-styles");
   };
 
   const handleSearch = (e: React.FormEvent) => {

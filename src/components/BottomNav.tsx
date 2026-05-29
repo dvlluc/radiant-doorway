@@ -30,7 +30,7 @@ export function BottomNav({ className }: BottomNavProps) {
       }
     });
     await supabase.auth.signOut({ scope: 'global' });
-    navigate("/directory");
+    navigate("/explore-styles");
   };
 
   const accountType = profile?.account_type === 'charitable_partner' ? 'Charity Partner' :

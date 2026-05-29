@@ -242,7 +242,7 @@ export async function resolveSignInRedirect(
     }
   }
 
-  return storedRedirect || defaultRedirect || "/directory";
+  return storedRedirect || defaultRedirect || "/explore-styles";
 }
 
 /** Google OAuth callback — registration flow. */
@@ -283,5 +283,5 @@ export async function resolveOAuthSignupRedirect(
     }
   }
 
-  return storedRedirect || defaultRedirect || "/directory";
+  return storedRedirect || defaultRedirect || "/explore-styles";
 }
