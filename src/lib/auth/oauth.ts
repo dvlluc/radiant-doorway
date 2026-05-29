@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type OAuthAccountType = "individual" | "business";
+type OAuthFlow = "signup" | "signin";
 
 const AUTH_CALLBACK_URL = `${window.location.origin}/auth`;
 
@@ -80,37 +81,57 @@ export async function isAppUserRegistered(userId: string): Promise<boolean> {
   return Boolean(data);
 }
 
-/** Sign-up only — starts Google OAuth registration flow. */
-export async function signUpWithGoogle(options: {
-  accountType: OAuthAccountType;
-  redirectPath?: string;
-}) {
-  sessionStorage.setItem("oauth_flow", "signup");
-  sessionStorage.setItem("oauth_account_type", options.accountType);
+async function startGoogleOAuth(
+  flow: OAuthFlow,
+  options?: { accountType?: OAuthAccountType; redirectPath?: string },
+) {
+  sessionStorage.setItem("oauth_flow", flow);
 
-  if (options.redirectPath) {
+  if (flow === "signup" && options?.accountType) {
+    sessionStorage.setItem("oauth_account_type", options.accountType);
+  } else {
+    sessionStorage.removeItem("oauth_account_type");
+  }
+
+  if (options?.redirectPath) {
     sessionStorage.setItem("oauth_redirect", options.redirectPath);
   } else {
     sessionStorage.removeItem("oauth_redirect");
   }
 
+  const oauthOptions: {
+    redirectTo: string;
+    queryParams: Record<string, string>;
+    data?: { account_type: OAuthAccountType };
+  } = {
+    redirectTo: AUTH_CALLBACK_URL,
+    queryParams: {
+      access_type: "online",
+      prompt: "select_account",
+    },
+  };
+
+  if (flow === "signup" && options?.accountType) {
+    oauthOptions.data = { account_type: options.accountType };
+  }
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: {
-      redirectTo: AUTH_CALLBACK_URL,
-      queryParams: {
-        access_type: "online",
-        prompt: "select_account",
-      },
-      data: { account_type: options.accountType },
-    } as {
-      redirectTo: string;
-      queryParams: Record<string, string>;
-      data: { account_type: OAuthAccountType };
-    },
+    options: oauthOptions,
   });
 
   if (error) throw error;
+}
+
+export function signUpWithGoogle(options: {
+  accountType: OAuthAccountType;
+  redirectPath?: string;
+}) {
+  return startGoogleOAuth("signup", options);
+}
+
+export function signInWithGoogle(options?: { redirectPath?: string }) {
+  return startGoogleOAuth("signin", options);
 }
 
 function getOAuthNameParts(user: User) {
@@ -171,7 +192,7 @@ async function syncOAuthUser(user: User, accountType: OAuthAccountType) {
 
 export class AuthFlowError extends Error {
   constructor(
-    readonly code: "NOT_REGISTERED" | "ALREADY_REGISTERED" | "SIGNUP_ONLY",
+    readonly code: "NOT_REGISTERED" | "ALREADY_REGISTERED",
     message: string,
   ) {
     super(message);
@@ -189,25 +210,49 @@ export async function assertRegisteredForSignIn(user: User): Promise<void> {
   );
 }
 
-/** After Google OAuth callback from sign-up flow only. */
+function clearOAuthSessionStorage() {
+  sessionStorage.removeItem("oauth_flow");
+  sessionStorage.removeItem("oauth_account_type");
+  sessionStorage.removeItem("oauth_redirect");
+}
+
+/** Redirect path after successful sign-in (email or Google). */
+export async function resolveSignInRedirect(
+  user: User,
+  defaultRedirect?: string,
+): Promise<string> {
+  const storedRedirect = sessionStorage.getItem("oauth_redirect");
+  sessionStorage.removeItem("oauth_redirect");
+
+  const { data: role } = await supabase
+    .from("user_roles")
+    .select("account_type")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (role?.account_type === "business") {
+    const { data: businessProfile } = await supabase
+      .from("business_profiles")
+      .select("business_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!businessProfile?.business_name) {
+      return storedRedirect || "/profile-completion";
+    }
+  }
+
+  return storedRedirect || defaultRedirect || "/directory";
+}
+
+/** Google OAuth callback — registration flow. */
 export async function resolveOAuthSignupRedirect(
   user: User,
   defaultRedirect?: string,
 ): Promise<string> {
-  const oauthFlow = sessionStorage.getItem("oauth_flow");
   const storedAccountType = sessionStorage.getItem("oauth_account_type") as OAuthAccountType | null;
   const storedRedirect = sessionStorage.getItem("oauth_redirect");
-  sessionStorage.removeItem("oauth_flow");
-  sessionStorage.removeItem("oauth_account_type");
-  sessionStorage.removeItem("oauth_redirect");
-
-  if (oauthFlow !== "signup") {
-    await supabase.auth.signOut();
-    throw new AuthFlowError(
-      "SIGNUP_ONLY",
-      "Google sign-in is disabled. Use email and password to sign in.",
-    );
-  }
+  clearOAuthSessionStorage();
 
   if (await isAppUserRegistered(user.id)) {
     await supabase.auth.signOut();

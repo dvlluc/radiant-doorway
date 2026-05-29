@@ -20,7 +20,9 @@ import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
 import { GoogleAuthButton, AuthDivider } from "@/components/auth/GoogleAuthButton";
 import {
   signUpWithGoogle,
+  signInWithGoogle,
   resolveOAuthSignupRedirect,
+  resolveSignInRedirect,
   assertRegisteredForSignIn,
   isAppUserRegistered,
   AuthFlowError,
@@ -158,17 +160,22 @@ export default function Auth() {
     let cancelled = false;
 
     void (async () => {
-      const isOAuthSignup = sessionStorage.getItem("oauth_flow") === "signup" || isOAuthCallback;
+      const oauthFlow = sessionStorage.getItem("oauth_flow");
 
       try {
-        if (isOAuthSignup) {
+        if (oauthFlow === "signup") {
           const path = await resolveOAuthSignupRedirect(user, redirectFrom);
           if (!cancelled) navigate(path, { replace: true });
           return;
         }
 
+        if (oauthFlow === "signin") {
+          sessionStorage.removeItem("oauth_flow");
+        }
+
         await assertRegisteredForSignIn(user);
-        if (!cancelled) navigate(redirectFrom || "/directory", { replace: true });
+        const path = await resolveSignInRedirect(user, redirectFrom);
+        if (!cancelled) navigate(path, { replace: true });
       } catch (error) {
         console.error("Post-auth failed:", error);
         if (cancelled) return;
@@ -177,7 +184,6 @@ export default function Auth() {
           const titles: Record<AuthFlowError["code"], string> = {
             NOT_REGISTERED: "Аккаунт не зарегистрирован",
             ALREADY_REGISTERED: "Аккаунт уже существует",
-            SIGNUP_ONLY: "Вход через Google недоступен",
           };
           toast({
             title: titles[error.code],
@@ -201,7 +207,7 @@ export default function Auth() {
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, navigate, redirectFrom, isOAuthCallback, toast]);
+  }, [user, authLoading, navigate, redirectFrom, toast]);
 
   useEffect(() => {
     if (location.state?.mode) {
@@ -288,6 +294,21 @@ export default function Auth() {
       const description = getGoogleAuthErrorMessage(error);
       toast({
         title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign up failed",
+        description,
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle({ redirectPath: redirectFrom });
+    } catch (error) {
+      const description = getGoogleAuthErrorMessage(error);
+      toast({
+        title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign in failed",
         description,
         variant: "destructive",
       });
@@ -723,6 +744,14 @@ export default function Auth() {
                 {loading ? "Please wait..." : "Sign In"}
               </Button>
             </form>
+
+            <AuthDivider />
+
+            <GoogleAuthButton
+              label="Sign in with Google"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            />
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
