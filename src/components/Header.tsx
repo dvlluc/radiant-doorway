@@ -1,4 +1,4 @@
-import { Search, LogOut, User as UserIcon, X, MessageSquare, ShoppingCart } from "lucide-react";
+import { Search, LogOut, User as UserIcon, X, MessageSquare, ShoppingCart, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,15 +14,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { memo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { shouldShowAppSidebar, useSidebarCollapseOptional } from "@/components/sidebar-collapse";
 
 export const Header = memo(function Header() {
   const { user } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const sidebarCollapse = useSidebarCollapseOptional();
+  const showSidebarToggle = shouldShowAppSidebar(pathname) && sidebarCollapse;
 
   // Use optimized hook for user profile
   const { data: profile } = useUserProfile(user?.id);
@@ -56,6 +61,19 @@ export const Header = memo(function Header() {
       </div>
       <header className="fixed top-0 md:top-[30px] left-0 right-0 h-14 bg-black text-white z-50 flex items-center justify-between px-4 md:px-6 py-1">
       <div className="flex items-center gap-2">
+        {showSidebarToggle && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex text-white hover:bg-white/10 h-9 w-9 shrink-0"
+            onClick={sidebarCollapse.toggle}
+            aria-label={sidebarCollapse.collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapse.collapsed}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        )}
         <Link to="/explore-styles" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
           {/* Icon only on mobile, full logo on larger screens */}
           <img 
