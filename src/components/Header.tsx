@@ -6,6 +6,8 @@ import {
   MessageSquare,
   ShoppingCart,
   Menu,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { memo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,21 +76,32 @@ export const Header = memo(function Header() {
       <header className="fixed top-0 md:top-[30px] left-0 right-0 h-14 bg-black text-white z-50 flex items-center justify-between px-4 py-1">
         <div className="flex items-center gap-4">
           {showSidebarToggle && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="hidden md:flex text-white hover:bg-white/10 h-9 w-9 shrink-0"
-              onClick={sidebarCollapse.toggle}
-              aria-label={
-                sidebarCollapse.collapsed
-                  ? "Expand sidebar"
-                  : "Collapse sidebar"
-              }
-              aria-expanded={!sidebarCollapse.collapsed}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="hidden md:flex text-white hover:bg-white/10 h-9 w-9 shrink-0"
+                  onClick={sidebarCollapse.toggle}
+                  aria-label={
+                    sidebarCollapse.collapsed
+                      ? "Expand sidebar"
+                      : "Collapse sidebar"
+                  }
+                  aria-expanded={!sidebarCollapse.collapsed}
+                >
+                  {sidebarCollapse.collapsed ? (
+                    <ChevronRight className="w-5 h-5" />
+                  ) : (
+                    <ChevronLeft className="w-5 h-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {sidebarCollapse.collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              </TooltipContent>
+            </Tooltip>
           )}
           <Link
             to="/explore-styles"
