@@ -39,7 +39,6 @@ const authBaseSchema = z.object({
   confirmPassword: z.string().optional(),
   firstName: z.string().trim().min(1, { message: "First name is required" }).optional(),
   lastName: z.string().trim().min(1, { message: "Last name is required" }).optional(),
-  displayName: z.string().trim().optional(),
   telephone: z.string().trim().min(1, { message: "Telephone number is required" }).optional(),
 });
 
@@ -131,7 +130,6 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [telephone, setTelephone] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [businessCategory, setBusinessCategory] = useState("");
@@ -225,7 +223,6 @@ export default function Auth() {
     telephone,
     firstName: accountType === "individual" ? firstName : undefined,
     lastName: accountType === "individual" ? lastName : undefined,
-    displayName: accountType === "individual" ? displayName : undefined,
     businessName: accountType === "business" ? businessName : undefined,
     businessCategory: accountType === "business" ? businessCategory : undefined,
   });
@@ -249,7 +246,6 @@ export default function Auth() {
         data: {
           first_name: accountType === "individual" ? firstName : undefined,
           last_name: accountType === "individual" ? lastName : undefined,
-          display_name: displayName,
           telephone: formatPhoneForTwilio(telephone),
           account_type: accountType,
           business_name: accountType === "business" ? businessName : undefined,
@@ -278,7 +274,6 @@ export default function Auth() {
       setConfirmPassword("");
       setFirstName("");
       setLastName("");
-      setDisplayName("");
       setTelephone("");
     }
   };
@@ -587,11 +582,6 @@ export default function Auth() {
           <label htmlFor="lastName" className="text-sm font-medium">Last Name <span className="text-destructive">*</span></label>
           <Input id="lastName" type="text" placeholder="Enter last name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-11" required disabled={loading} />
         </div>
-      </div>
-      <div className="space-y-2">
-        <label htmlFor="displayName" className="text-sm font-medium">Screen Name (Optional)</label>
-        <Input id="displayName" type="text" placeholder="Choose a display name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="h-11" disabled={loading} />
-        <p className="text-xs text-muted-foreground">This will be your public display name on the platform</p>
       </div>
     </>
   );
