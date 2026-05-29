@@ -182,8 +182,8 @@ export default function Auth() {
 
         if (error instanceof AuthFlowError) {
           const titles: Record<AuthFlowError["code"], string> = {
-            NOT_REGISTERED: "Аккаунт не зарегистрирован",
-            ALREADY_REGISTERED: "Аккаунт уже существует",
+            NOT_REGISTERED: "Account not registered",
+            ALREADY_REGISTERED: "Account already exists",
           };
           toast({
             title: titles[error.code],
@@ -293,7 +293,7 @@ export default function Auth() {
     } catch (error) {
       const description = getGoogleAuthErrorMessage(error);
       toast({
-        title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign up failed",
+        title: isGoogleProviderSetupError(description) ? "Google is not configured in Supabase" : "Google sign up failed",
         description,
         variant: "destructive",
       });
@@ -308,7 +308,7 @@ export default function Auth() {
     } catch (error) {
       const description = getGoogleAuthErrorMessage(error);
       toast({
-        title: isGoogleProviderSetupError(description) ? "Google не настроен в Supabase" : "Google sign in failed",
+        title: isGoogleProviderSetupError(description) ? "Google is not configured in Supabase" : "Google sign in failed",
         description,
         variant: "destructive",
       });
@@ -363,8 +363,8 @@ export default function Auth() {
         } else if (signInData.user && !(await isAppUserRegistered(signInData.user.id))) {
           await supabase.auth.signOut();
           toast({
-            title: "Аккаунт не зарегистрирован",
-            description: "Сначала создайте аккаунт через регистрацию.",
+            title: "Account not registered",
+            description: "Please sign up first to create an account.",
             variant: "destructive",
           });
           setIsSignUp(true);
