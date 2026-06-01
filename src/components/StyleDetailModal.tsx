@@ -10,6 +10,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencyFromLocation } from "@/utils/currency";
 import { ShareDialog } from "@/components/ShareDialog";
+import { addServiceToCart, isCartDuplicateError } from "@/lib/booking/cart";
+import { useBookingCart, useInvalidateBookingCart } from "@/hooks/useBookingCart";
 
 interface StyleData {
   id: string;
@@ -54,6 +56,9 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { data: bookingCart } = useBookingCart(open ? user?.id : undefined);
+  const invalidateBookingCart = useInvalidateBookingCart();
+  const styleInCart = styleId ? bookingCart?.productIds.includes(styleId) : false;
   const [style, setStyle] = useState<StyleData | null>(null);
   const [professional, setProfessional] = useState<Professional | null>(null);
   const [avgRating, setAvgRating] = useState(0);
@@ -166,21 +171,58 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
     }
   };
 
-  const handleBookThisLook = () => {
-    if (!style || !professional) return;
+  const handleAddToCart = async () => {
+    if (!style || !professional || !user) {
+      if (!user) {
+        toast({ title: "Sign in required", description: "Please sign in to book.", variant: "destructive" });
+      }
+      return;
+    }
 
-    onOpenChange(false);
-    navigate(`/booking/${professional.user_id}`, {
-      state: {
-        fromStyle: true,
-        styleId: style.id,
-        styleName: style.style_name,
-        stylePhoto: style.photo_url,
-        servicesRequired: style.services_required,
-        estimatedPrice: displayedPrice,
-        estimatedTime: displayedTime,
-      },
-    });
+    if (displayedPrice == null || displayedTime == null) {
+      toast({
+        title: "Cannot add to cart",
+        description: "Price and duration are required for this style.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (styleInCart) {
+      toast({ title: "Already in cart", description: "This look is already in your cart." });
+      return;
+    }
+
+    try {
+      await addServiceToCart(
+        user.id,
+        {
+          id: style.id,
+          name: style.style_name,
+          price: displayedPrice,
+          duration: displayedTime,
+          description: style.description,
+          image_url: style.photo_url,
+        },
+        { id: professional.user_id, name: professional.business_name },
+        {
+          itemKind: "style",
+          styleId: style.id,
+          styleName: style.style_name,
+          stylePhoto: style.photo_url,
+        }
+      );
+      await invalidateBookingCart(user.id);
+      toast({ title: "Added to cart", description: "Saved for 24 hours. Book time from your cart." });
+      onOpenChange(false);
+      navigate("/cart");
+    } catch (error) {
+      if (isCartDuplicateError(error)) {
+        toast({ title: "Already in cart", description: "This look is already in your cart." });
+        return;
+      }
+      toast({ title: "Error", description: "Could not add to cart.", variant: "destructive" });
+    }
   };
 
   const currency = style ? getCurrencyFromLocation(style.location || "United States") : { symbol: "$" };
@@ -304,8 +346,12 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
                 </div>
               )}
 
-              <Button className="h-12 w-full rounded-xl text-sm font-semibold" onClick={handleBookThisLook}>
-                Book This Look
+              <Button
+                className="h-12 w-full rounded-xl text-sm font-semibold"
+                onClick={handleAddToCart}
+                disabled={styleInCart}
+              >
+                {styleInCart ? "Already in cart" : "Add to cart"}
               </Button>
             </div>
 

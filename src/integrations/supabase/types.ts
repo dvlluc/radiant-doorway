@@ -2345,6 +2345,18 @@ export type Database = {
     Functions: {
       auto_complete_arrived_appointments: { Args: never; Returns: undefined }
       cleanup_expired_cart_items: { Args: never; Returns: undefined }
+      get_staff_busy_slots: {
+        Args: {
+          p_business_id: string
+          p_staff_auth_id: string | null
+          p_range_start: string
+          p_range_end: string
+        }
+        Returns: {
+          start_time: string
+          end_time: string
+        }[]
+      }
       create_conversation_with_participants: {
         Args: { _user1_id: string; _user2_id: string }
         Returns: string

@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSmartBack } from "@/hooks/useSmartBack";
+import { addServiceToCart, isCartDuplicateError } from "@/lib/booking/cart";
+import { useBookingCart, useInvalidateBookingCart } from "@/hooks/useBookingCart";
 import { Badge } from "@/components/ui/badge";
 
 interface Service {
@@ -38,6 +40,9 @@ export default function Booking() {
   const goBack = useSmartBack('/explore-styles');
   const { toast } = useToast();
   const { user } = useAuth();
+  const { data: bookingCart } = useBookingCart(user?.id);
+  const invalidateBookingCart = useInvalidateBookingCart();
+  const cartProductIds = new Set(bookingCart?.productIds ?? []);
 
   // State from "Book This Look" navigation
   const preSelectedService = (location.state as any)?.preSelectedService;
@@ -208,6 +213,13 @@ export default function Booking() {
   }, [resolvedId, toast, isAuthenticated]);
 
   const handleAddService = (service: Service) => {
+    if (cartProductIds.has(service.id)) {
+      toast({
+        title: "Already in cart",
+        description: `${service.name} is already in your cart.`,
+      });
+      return;
+    }
     setSelectedServices([...selectedServices, service]);
   };
 
@@ -274,36 +286,49 @@ export default function Booking() {
       return;
     }
     try {
-      const expiresAt = new Date();
-      expiresAt.setHours(expiresAt.getHours() + 24);
-      for (const service of selectedServices) {
-        const { error } = await supabase.from("cart_items").insert({
-          user_id: user.id,
-          product_id: service.id,
-          product_name: service.name,
-          product_image: null,
-          price: service.price,
-          quantity: 1,
-          expires_at: expiresAt.toISOString(),
-          item_type: 'booking',
-          item_data: {
-            businessId: resolvedId,
-            businessName: business?.business_name,
-            serviceId: service.id,
-            serviceName: service.name,
-            duration: service.duration,
-            description: service.description,
-          }
+      const toAdd = selectedServices.filter((s) => !cartProductIds.has(s.id));
+      const skipped = selectedServices.length - toAdd.length;
+
+      if (toAdd.length === 0) {
+        toast({
+          title: "Already in cart",
+          description: "Selected items are already in your cart.",
         });
-        if (error) throw error;
+        navigate("/cart");
+        return;
       }
-      toast({
-        title: "✓ Services Selected",
-        description: selectedServices.map(s => `${s.name} — ${currency.symbol}${s.price}`).join(', '),
-      });
-      navigate(`/booking/${rawId}/datetime`, {
-        state: { services: selectedServices, businessId: resolvedId, businessName: business?.business_name },
-      });
+
+      let added = 0;
+      for (const service of toAdd) {
+        try {
+          await addServiceToCart(
+            user.id,
+            service,
+            { id: resolvedId!, name: business?.business_name },
+            fromStyle
+              ? {
+                  itemKind: "style",
+                  styleId,
+                  styleName,
+                  stylePhoto: stylePhoto || null,
+                }
+              : undefined
+          );
+          added += 1;
+        } catch (error) {
+          if (!isCartDuplicateError(error)) throw error;
+        }
+      }
+
+      await invalidateBookingCart(user.id);
+
+      const description =
+        skipped > 0
+          ? `${added} added, ${skipped} already in cart.`
+          : `${added} item(s) saved for 24 hours.`;
+
+      toast({ title: "Added to cart", description });
+      navigate("/cart");
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast({ title: "Error", description: "Failed to add services to cart.", variant: "destructive" });
@@ -334,13 +359,16 @@ export default function Booking() {
   // Render a service card
   const renderServiceCard = (service: Service) => {
     const isSelected = selectedServices.some((s) => s.id === service.id);
+    const inCart = cartProductIds.has(service.id);
     return (
       <div
         key={service.id}
         className={`relative rounded-xl border p-4 transition-all duration-200 bg-[#fafafa] dark:bg-muted/30 ${
-          isSelected
-            ? "border-border bg-[#fafafa]"
-            : "border-border/60 hover:border-border"
+          inCart
+            ? "border-border/40 opacity-70"
+            : isSelected
+              ? "border-border bg-[#fafafa]"
+              : "border-border/60 hover:border-border"
         }`}
       >
         {service.discount_active && service.discount_percentage && (
@@ -386,14 +414,17 @@ export default function Booking() {
               )}
             </div>
             <button
+              disabled={inCart}
               onClick={() => isSelected ? handleRemoveService(service.id) : handleAddService(service)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                isSelected
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted hover:bg-muted/80 text-foreground"
+                inCart
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : isSelected
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80 text-foreground"
               }`}
             >
-              {isSelected ? "Added ✓" : "+ Add"}
+              {inCart ? "In cart" : isSelected ? "Added ✓" : "+ Add"}
             </button>
           </div>
         </div>
@@ -612,7 +643,7 @@ export default function Booking() {
                 onClick={handleContinue}
                 className="bg-foreground hover:bg-foreground/90 text-background rounded-full px-6 gap-2"
               >
-                {fromStyle ? "Select Date & Time" : "Continue"}
+                Add to cart
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

@@ -5,6 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { ArrowLeft, Star, MapPin, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Camera, X, Upload } from "lucide-react";
 import { format, addMinutes, setHours, setMinutes, startOfDay } from "date-fns";
+import {
+  blockedTimeToIntervals,
+  busySlotsToIntervals,
+  fetchBusySlots,
+  isTimeRangeUnavailable,
+} from "@/lib/booking/availability";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { getCurrencyFromLocation } from "@/utils/currency";
@@ -71,6 +77,7 @@ export default function BookingDateTime() {
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [businessHours, setBusinessHours] = useState<BusinessHours[]>([]);
   const [blockedTimes, setBlockedTimes] = useState<BlockedTime[]>([]);
+  const [busySlots, setBusySlots] = useState<Array<{ start_time: string; end_time: string }>>([]);
   const [waitingListCounts, setWaitingListCounts] = useState<WaitingListEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeSlots, setTimeSlots] = useState<{ time: string; status: string; waitingCount: number }[]>([]);
@@ -239,6 +246,20 @@ export default function BookingDateTime() {
     fetchData();
   }, [businessId, toast, isAuthenticated]);
 
+  const selectedStaffAuthId = (() => {
+    if (selectedProfessional === "no-professional") return null;
+    const prof = professionals.find((p) => p.id === selectedProfessional);
+    return prof?.member_id || null;
+  })();
+
+  useEffect(() => {
+    if (!businessId || !selectedDate || !isAuthenticated) {
+      setBusySlots([]);
+      return;
+    }
+    fetchBusySlots(businessId, selectedStaffAuthId, selectedDate).then(setBusySlots);
+  }, [businessId, selectedDate, selectedStaffAuthId, isAuthenticated]);
+
   // Helper function to check if a date should be disabled
   const isDayDisabled = (date: Date) => {
     // If no business hours are configured, allow all future weekdays
@@ -315,32 +336,34 @@ export default function BookingDateTime() {
     const endTime = setMinutes(setHours(startOfDay(selectedDate), closeHour), closeMinute);
 
     const noProfessional = selectedProfessional === "no-professional";
+    const blockedIntervals = blockedTimeToIntervals(blockedTimes, selectedStaffAuthId);
+    const busyIntervals = busySlotsToIntervals(busySlots);
+    const slotDuration = services.reduce((sum: number, s: { duration: number }) => sum + s.duration, 0) || 30;
 
     while (currentTime < endTime) {
       const timeStr = format(currentTime, "hh:mm a");
       const dateStr = format(selectedDate, "yyyy-MM-dd");
-      
-      let isBlocked = false;
+      const slotEnd = addMinutes(currentTime, slotDuration);
+
       let waitingCount = 0;
+      let status: string = "available";
 
-      if (!noProfessional) {
-        const selectedProf = professionals.find(p => p.id === selectedProfessional);
-        isBlocked = !!(selectedProf?.member_id && blockedTimes.some(bt => {
-          if (bt.staff_member_id !== selectedProf.member_id) return false;
-          const blockStart = new Date(bt.start_time);
-          const blockEnd = new Date(bt.end_time);
-          return currentTime >= blockStart && currentTime < blockEnd;
-        }));
-
-        waitingCount = selectedProf?.member_id ? waitingListCounts.filter(wl => 
-          wl.staff_member_id === selectedProf.member_id &&
-          wl.requested_time === timeStr &&
-          wl.requested_date === dateStr
-        ).length : 0;
-      }
-
-      let status = "available";
-      if (isBlocked) {
+      if (slotEnd > endTime) {
+        status = "not-available";
+      } else if (isTimeRangeUnavailable(currentTime, slotEnd, [], busyIntervals)) {
+        status = "not-available";
+      } else if (isTimeRangeUnavailable(currentTime, slotEnd, blockedIntervals, [])) {
+        if (!noProfessional) {
+          const selectedProf = professionals.find(p => p.id === selectedProfessional);
+          waitingCount = selectedProf?.member_id
+            ? waitingListCounts.filter(
+                (wl) =>
+                  wl.staff_member_id === selectedProf.member_id &&
+                  wl.requested_time === timeStr &&
+                  wl.requested_date === dateStr
+              ).length
+            : 0;
+        }
         status = waitingCount < 5 ? "waiting-list" : "not-available";
       }
 
@@ -354,7 +377,7 @@ export default function BookingDateTime() {
     }
 
     setTimeSlots(slots);
-  }, [selectedDate, businessHours, selectedProfessional, blockedTimes, waitingListCounts]);
+  }, [selectedDate, businessHours, selectedProfessional, blockedTimes, waitingListCounts, busySlots, selectedStaffAuthId, services]);
 
   const totalDuration = services.reduce((sum: number, s: any) => sum + s.duration, 0);
   const totalPrice = services.reduce((sum: number, s: any) => sum + s.price, 0);

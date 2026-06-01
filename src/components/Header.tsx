@@ -29,6 +29,8 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useBookingCart } from "@/hooks/useBookingCart";
+import { cn } from "@/lib/utils";
 import {
   shouldShowAppSidebar,
   useSidebarCollapseOptional,
@@ -45,6 +47,8 @@ export const Header = memo(function Header() {
 
   // Use optimized hook for user profile
   const { data: profile } = useUserProfile(user?.id);
+  const { data: bookingCart } = useBookingCart(user?.id);
+  const cartCount = bookingCart?.count ?? 0;
 
   const handleSignOut = async () => {
     // Clear ALL auth-related localStorage items
@@ -173,10 +177,22 @@ export const Header = memo(function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden md:flex text-white hover:bg-white/10"
+              className="hidden md:flex relative text-white hover:bg-white/10"
               onClick={() => navigate("/cart")}
+              aria-label={cartCount > 0 ? `Cart, ${cartCount} items` : "Cart"}
             >
               <ShoppingCart className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span
+                  className={cn(
+                    "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1",
+                    "rounded-full bg-white text-black text-[10px] font-bold",
+                    "flex items-center justify-center leading-none"
+                  )}
+                >
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Button>
           )}
 

@@ -24,6 +24,8 @@ const Booking = lazy(() => import("./pages/Booking"));
 const BookingDateTime = lazy(() => import("./pages/BookingDateTime"));
 const BookingPayment = lazy(() => import("./pages/BookingPayment"));
 const BookingSuccess = lazy(() => import("./pages/BookingSuccess"));
+const Cart = lazy(() => import("./pages/Cart"));
+const CartItemBooking = lazy(() => import("./pages/CartItemBooking"));
 
 const Auth = lazy(() => import("./pages/Auth"));
 const ProfileCompletion = lazy(() => import("./pages/ProfileCompletion"));
@@ -109,6 +111,8 @@ const App = () => (
                   <Route path="/booking/:id" element={<Booking />} />
                   <Route path="/booking/:id/datetime" element={<BookingDateTime />} />
                   <Route path="/booking/:id/payment" element={<BookingPayment />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/cart/book/:cartItemId" element={<CartItemBooking />} />
                   <Route path="/create-test-accounts" element={<CreateTestAccounts />} />
                   <Route path="/explore-styles" element={<ExploreStyles />} />
                   <Route path="/explore-styles/:id" element={<StyleDetail />} />
