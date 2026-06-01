@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Phone, Mail, Globe, Calendar, MessageSquare, MoreHorizontal, Users, Clock, Briefcase, Star, User, Heart, ShoppingCart, ArrowLeft, ChevronRight, UserPlus, UserCheck, Plus, Upload, Loader2 } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, Calendar, MessageSquare, MoreHorizontal, Users, Clock, Briefcase, Star, User, ShoppingCart, ArrowLeft, ChevronRight, UserPlus, UserCheck, Plus, Upload, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate, useParams } from "react-router-dom";
@@ -46,34 +46,6 @@ interface Job {
   salary: string;
   description: string;
   created_at: string;
-}
-
-interface Post {
-  id: string;
-  content: string;
-  image_urls: string[];
-  video_url?: string;
-  created_at: string;
-  likes_count: number;
-  comments_count: number;
-  shares_count: number;
-  user_id: string;
-  post_type?: string;
-  rating?: number;
-  tags?: string[];
-  hashtags?: string;
-  account_type?: string;
-  business_name?: string;
-  brand_name?: string;
-  organization_name?: string;
-  org_avatar_url?: string;
-  profiles?: {
-    username: string;
-    display_name: string;
-    first_name: string;
-    last_name: string;
-    avatar_url: string;
-  };
 }
 
 interface BusinessPhoto {
@@ -215,28 +187,19 @@ export default function ProfessionalProfile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
   const [businessPhotos, setBusinessPhotos] = useState<BusinessPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(false);
-  const [loadingPosts, setLoadingPosts] = useState(false);
   const [availableTabs, setAvailableTabs] = useState<string[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedBusinessPhoto, setSelectedBusinessPhoto] = useState<BusinessPhoto | null>(null);
   const [businessPhotoComments, setBusinessPhotoComments] = useState<any[]>([]);
-  const [postComments, setPostComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [localLikesCount, setLocalLikesCount] = useState(0);
-  const [localCommentsCount, setLocalCommentsCount] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
   const [appointmentBookingEnabled, setAppointmentBookingEnabled] = useState(false);
-  const [postLikes, setPostLikes] = useState<Record<string, boolean>>({});
   
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -474,10 +437,7 @@ export default function ProfessionalProfile() {
         fetchProfileEvents();
       } else if (activeTab === "Jobs") {
         fetchProfileJobs();
-      } else if (activeTab === "Posts") {
-        fetchProfilePosts();
       } else if (activeTab === "Photos") {
-        fetchProfilePosts();
         fetchBusinessPhotos();
       } else if (activeTab === "Styles") {
         fetchBusinessPhotos();
@@ -700,7 +660,7 @@ export default function ProfessionalProfile() {
         const servicesTabName = showHours ? "Services & Hours" : "Services";
         baseTabs = ["Styles", servicesTabName, "Team", "Store", "Reviews"];
       } else {
-        baseTabs = ["Posts", "Photos", "Videos", "Events", "Jobs"];
+        baseTabs = ["Photos", "Events", "Jobs"];
       }
       
       setAvailableTabs(baseTabs);
@@ -758,67 +718,6 @@ export default function ProfessionalProfile() {
     }
   };
 
-  const fetchProfilePosts = async () => {
-    if (!profile?.id) return;
-    
-    setLoadingPosts(true);
-    try {
-      const { data: postsData, error } = await supabase
-        .from("posts")
-        .select(`
-          *,
-          profiles(username, display_name, first_name, last_name, avatar_url)
-        `)
-        .eq("user_id", profile.id)
-        .neq("post_type", "review")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      
-      // Enrich posts with business/brand/charity names if applicable
-      if (postsData && postsData.length > 0) {
-        const userId = profile.id;
-        
-        // Fetch account type and business/brand/charity info including logos
-        const [roleResult, businessResult, brandResult, charityResult] = await Promise.all([
-          supabase.from("user_roles").select("account_type").eq("user_id", userId).maybeSingle(),
-          supabase.from("business_profiles").select("business_name, logo_url, avatar_url").eq("user_id", userId).maybeSingle(),
-          supabase.from("brand_profiles").select("brand_name, logo_url, avatar_url").eq("user_id", userId).maybeSingle(),
-          supabase.from("charitable_profiles").select("organization_name, logo_url, avatar_url").eq("user_id", userId).maybeSingle()
-        ]);
-
-        // Determine the correct avatar/logo URL
-        let orgAvatarUrl = '';
-        const accountType = roleResult.data?.account_type;
-        if (accountType === 'business') {
-          orgAvatarUrl = businessResult.data?.logo_url || businessResult.data?.avatar_url || '';
-        } else if (accountType === 'brand') {
-          orgAvatarUrl = brandResult.data?.logo_url || brandResult.data?.avatar_url || '';
-        } else if (accountType === 'charitable_partner') {
-          orgAvatarUrl = charityResult.data?.logo_url || charityResult.data?.avatar_url || '';
-        }
-
-        // Attach the business/brand/charity data to each post
-        const enrichedPosts = postsData.map(post => ({
-          ...post,
-          account_type: roleResult.data?.account_type,
-          business_name: businessResult.data?.business_name,
-          brand_name: brandResult.data?.brand_name,
-          organization_name: charityResult.data?.organization_name,
-          org_avatar_url: orgAvatarUrl
-        }));
-
-        setPosts(enrichedPosts);
-      } else {
-        setPosts([]);
-      }
-    } catch (error) {
-      console.error("Error fetching profile posts:", error);
-    } finally {
-      setLoadingPosts(false);
-    }
-  };
-
   const fetchBusinessPhotos = async () => {
     if (!profile?.id) return;
     
@@ -832,311 +731,8 @@ export default function ProfessionalProfile() {
 
       if (error) throw error;
       setBusinessPhotos(data || []);
-      
-      // Fetch like status for business photos if user is logged in
-      if (currentUserId && data && data.length > 0) {
-        const photoIds = data.map(photo => photo.id);
-        const { data: likes } = await supabase
-          .from("post_likes")
-          .select("post_id")
-          .eq("user_id", currentUserId)
-          .in("post_id", photoIds);
-        
-        const likesMap: Record<string, boolean> = {};
-        likes?.forEach(like => {
-          likesMap[like.post_id] = true;
-        });
-        setPostLikes(likesMap);
-      }
     } catch (error) {
       console.error("Error fetching business photos:", error);
-    }
-  };
-
-  const getPhotos = () => {
-    const postPhotos = posts.filter(post => post.image_urls && post.image_urls.length > 0);
-    return { postPhotos, businessPhotos };
-  };
-
-  const getVideos = () => {
-    const videoPosts = posts.filter(post => post.video_url);
-    const videoEvents = events.filter(event => event.video_url);
-    return { videoPosts, videoEvents };
-  };
-
-  const fetchPostComments = async (postId: string) => {
-    console.log("Fetching comments for post:", postId);
-    try {
-      // Fetch all comments (including replies)
-      const { data: allCommentsData, error: commentsError } = await supabase
-        .from("post_comments")
-        .select("*")
-        .eq("post_id", postId)
-        .order("created_at", { ascending: true });
-
-      if (commentsError) {
-        console.error("Error fetching comments:", commentsError);
-        throw commentsError;
-      }
-
-      if (!allCommentsData || allCommentsData.length === 0) {
-        console.log("No comments found");
-        setPostComments([]);
-        return;
-      }
-
-      // Get unique user IDs from all comments
-      const userIds = [...new Set(allCommentsData.map(c => c.user_id))];
-      
-      // Fetch all necessary data in parallel
-      const [profilesResult, rolesResult, businessResult, brandResult, charityResult, likesResult] = await Promise.all([
-        supabase.from("profiles").select("id, username, display_name, first_name, last_name, avatar_url").in("id", userIds),
-        supabase.from("user_roles").select("user_id, account_type").in("user_id", userIds),
-        supabase.from("business_profiles").select("user_id, business_name").in("user_id", userIds),
-        supabase.from("brand_profiles").select("user_id, brand_name").in("user_id", userIds),
-        supabase.from("charitable_profiles").select("user_id, organization_name").in("user_id", userIds),
-        currentUserId 
-          ? supabase.from("comment_likes").select("comment_id").eq("user_id", currentUserId).in("comment_id", allCommentsData.map(c => c.id))
-          : Promise.resolve({ data: [] })
-      ]);
-
-      if (profilesResult.error) {
-        console.error("Error fetching profiles:", profilesResult.error);
-      }
-
-      // Create lookup maps
-      const accountTypeMap = new Map(rolesResult.data?.map(r => [r.user_id, r.account_type]) || []);
-      const businessNameMap = new Map(businessResult.data?.map(b => [b.user_id, b.business_name]) || []);
-      const brandNameMap = new Map(brandResult.data?.map(b => [b.user_id, b.brand_name]) || []);
-      const organizationNameMap = new Map(charityResult.data?.map(c => [c.user_id, c.organization_name]) || []);
-
-      // Set comment likes
-      const likes: Record<string, boolean> = {};
-      likesResult.data?.forEach(like => {
-        likes[like.comment_id] = true;
-      });
-      setCommentLikes(likes);
-
-      // Build nested structure with account information
-      const commentsMap = new Map();
-      allCommentsData.forEach(comment => {
-        commentsMap.set(comment.id, {
-          ...comment,
-          profiles: profilesResult.data?.find(p => p.id === comment.user_id) || null,
-          account_type: accountTypeMap.get(comment.user_id),
-          business_name: businessNameMap.get(comment.user_id),
-          brand_name: brandNameMap.get(comment.user_id),
-          organization_name: organizationNameMap.get(comment.user_id),
-          replies: []
-        });
-      });
-
-      // Nest replies
-      const rootComments: any[] = [];
-      commentsMap.forEach(comment => {
-        if (comment.parent_comment_id) {
-          const parent = commentsMap.get(comment.parent_comment_id);
-          if (parent) {
-            parent.replies.push(comment);
-          }
-        } else {
-          rootComments.push(comment);
-        }
-      });
-
-      console.log("Enriched comments with replies:", rootComments);
-      setPostComments(rootComments);
-    } catch (error) {
-      console.error("Error in fetchPostComments:", error);
-      setPostComments([]);
-    }
-  };
-
-  const handlePostClick = async (post: Post) => {
-    console.log("Post clicked:", post.id, "Comments count:", post.comments_count);
-    setSelectedPost(post);
-    setLocalLikesCount(post.likes_count);
-    setLocalCommentsCount(post.comments_count);
-    
-    // Always fetch comments regardless of login status
-    if (post.id) {
-      await fetchPostComments(post.id);
-    } else {
-      console.error("Post ID is missing!");
-    }
-    
-    // Check like/save status only if user is logged in
-    if (currentUserId && post.id) {
-      // Check if user has liked the post
-      const { data: likeData } = await supabase
-        .from("post_likes")
-        .select("id")
-        .eq("post_id", post.id)
-        .eq("user_id", currentUserId)
-        .maybeSingle();
-      
-      setIsLiked(!!likeData);
-
-      // Check if user has saved the post
-      const { data: saveData } = await supabase
-        .from("saved_posts")
-        .select("id")
-        .eq("post_id", post.id)
-        .eq("user_id", currentUserId)
-        .maybeSingle();
-      
-      setIsSaved(!!saveData);
-    } else {
-      setIsLiked(false);
-      setIsSaved(false);
-    }
-  };
-
-  const handleLikePost = async () => {
-    if (!currentUserId || !selectedPost?.id) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to like posts",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      if (isLiked) {
-        await supabase
-          .from("post_likes")
-          .delete()
-          .eq("post_id", selectedPost.id)
-          .eq("user_id", currentUserId);
-        
-        setIsLiked(false);
-        setLocalLikesCount(prev => prev - 1);
-      } else {
-        await supabase
-          .from("post_likes")
-          .insert({ post_id: selectedPost.id, user_id: currentUserId });
-        
-        setIsLiked(true);
-        setLocalLikesCount(prev => prev + 1);
-      }
-    } catch (error) {
-      console.error("Error toggling like:", error);
-    }
-  };
-
-  const handleSavePost = async () => {
-    if (!currentUserId || !selectedPost?.id) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to save posts",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      if (isSaved) {
-        await supabase
-          .from("saved_posts")
-          .delete()
-          .eq("post_id", selectedPost.id)
-          .eq("user_id", currentUserId);
-        
-        setIsSaved(false);
-        toast({ title: "Post unsaved" });
-      } else {
-        await supabase
-          .from("saved_posts")
-          .insert({ post_id: selectedPost.id, user_id: currentUserId });
-        
-        setIsSaved(true);
-        toast({ title: "Post saved" });
-      }
-    } catch (error) {
-      console.error("Error toggling save:", error);
-    }
-  };
-
-  const handleAddComment = async () => {
-    if (!currentUserId || !selectedPost?.id || !newComment.trim()) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("post_comments")
-        .insert({
-          post_id: selectedPost.id,
-          user_id: currentUserId,
-          content: newComment.trim(),
-          parent_comment_id: replyingTo?.id || null
-        });
-
-      if (error) throw error;
-
-      setNewComment("");
-      setReplyingTo(null);
-      setLocalCommentsCount(prev => prev + 1);
-      await fetchPostComments(selectedPost.id);
-      
-      toast({ title: replyingTo ? "Reply added" : "Comment added" });
-    } catch (error) {
-      console.error("Error adding comment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add comment",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleLikeComment = async (commentId: string) => {
-    if (!currentUserId) {
-      toast({ 
-        title: "Authentication required",
-        description: "Please log in to like comments"
-      });
-      return;
-    }
-
-    try {
-      const isLiked = commentLikes[commentId];
-
-      if (isLiked) {
-        // Unlike
-        const { error } = await supabase
-          .from("comment_likes")
-          .delete()
-          .eq("comment_id", commentId)
-          .eq("user_id", currentUserId);
-
-        if (error) throw error;
-        setCommentLikes(prev => ({ ...prev, [commentId]: false }));
-      } else {
-        // Like
-        const { error } = await supabase
-          .from("comment_likes")
-          .insert({
-            comment_id: commentId,
-            user_id: currentUserId
-          });
-
-        if (error) throw error;
-        setCommentLikes(prev => ({ ...prev, [commentId]: true }));
-      }
-
-      // Refresh comments to update counts
-      if (selectedPost?.id) {
-        await fetchPostComments(selectedPost.id);
-      }
-    } catch (error) {
-      console.error("Error liking comment:", error);
-      toast({
-        title: "Error",
-        description: "Failed to like comment",
-        variant: "destructive"
-      });
     }
   };
 
@@ -1391,154 +987,61 @@ export default function ProfessionalProfile() {
     setLoadingReviews(true);
     try {
       const isBrand = profile?.accountType === 'brand';
-      
-      let reviewsData: any = null;
-      let reviewPostsData: any = null;
-      let reviewsError: any = null;
-      let reviewPostsError: any = null;
 
-      // Fetch reviews based on account type
-      if (isBrand) {
-        const reviewsResult = await (supabase as any)
-          .from('reviews')
-          .select(`
-            *,
-            profiles:reviewer_id (
-              first_name,
-              last_name,
-              display_name,
-              avatar_url
-            ),
-            team_members:staff_member_id (
-              id,
-              member_id,
-              email,
-              title
-            )
-          `)
-          .eq('brand_id', id)
-          .order('created_at', { ascending: false });
-        
-        reviewsData = reviewsResult.data;
-        reviewsError = reviewsResult.error;
+      const reviewsResult = await (supabase as any)
+        .from('reviews')
+        .select(`
+          *,
+          profiles:reviewer_id (
+            first_name,
+            last_name,
+            display_name,
+            avatar_url
+          ),
+          team_members:staff_member_id (
+            id,
+            member_id,
+            email,
+            title
+          )
+        `)
+        .eq(isBrand ? 'brand_id' : 'business_id', id)
+        .order('created_at', { ascending: false });
 
-        const postsResult = await (supabase as any)
-          .from('posts')
-          .select(`
-            *,
-            profiles:user_id (
-              first_name,
-              last_name,
-              display_name,
-              avatar_url
-            )
-          `)
-          .eq('brand_id', id)
-          .eq('post_type', 'review')
-          .order('created_at', { ascending: false});
-        
-        reviewPostsData = postsResult.data;
-        reviewPostsError = postsResult.error;
-      } else {
-        const reviewsResult = await (supabase as any)
-          .from('reviews')
-          .select(`
-            *,
-            profiles:reviewer_id (
-              first_name,
-              last_name,
-              display_name,
-              avatar_url
-            ),
-            team_members:staff_member_id (
-              id,
-              member_id,
-              email,
-              title
-            )
-          `)
-          .eq('business_id', id)
-          .order('created_at', { ascending: false });
-        
-        reviewsData = reviewsResult.data;
-        reviewsError = reviewsResult.error;
+      if (reviewsResult.error) throw reviewsResult.error;
 
-        const postsResult = await (supabase as any)
-          .from('posts')
-          .select(`
-            *,
-            profiles:user_id (
-              first_name,
-              last_name,
-              display_name,
-              avatar_url
-            )
-          `)
-          .eq('business_id', id)
-          .eq('post_type', 'review')
-          .order('created_at', { ascending: false});
-        
-        reviewPostsData = postsResult.data;
-        reviewPostsError = postsResult.error;
-      }
+      const reviewsData = reviewsResult.data || [];
+      const reviewerIds = reviewsData.map((r: { reviewer_id: string }) => r.reviewer_id).filter(Boolean);
 
-      if (reviewsError) throw reviewsError;
-
-      // Get all reviewer user IDs
-      const reviewerIds = [
-        ...(reviewsData || []).map(r => r.reviewer_id),
-        ...(reviewPostsData || []).map(p => p.user_id)
-      ].filter(Boolean);
-
-      // Fetch account types and organizational names for all reviewers
       const [rolesResult, businessResult, brandResult, charityResult] = await Promise.all([
-        supabase.from("user_roles").select("user_id, account_type").in("user_id", reviewerIds),
-        supabase.from("business_profiles").select("user_id, business_name").in("user_id", reviewerIds),
-        supabase.from("brand_profiles").select("user_id, brand_name").in("user_id", reviewerIds),
-        supabase.from("charitable_profiles").select("user_id, organization_name").in("user_id", reviewerIds)
+        reviewerIds.length > 0
+          ? supabase.from("user_roles").select("user_id, account_type").in("user_id", reviewerIds)
+          : Promise.resolve({ data: [] }),
+        reviewerIds.length > 0
+          ? supabase.from("business_profiles").select("user_id, business_name").in("user_id", reviewerIds)
+          : Promise.resolve({ data: [] }),
+        reviewerIds.length > 0
+          ? supabase.from("brand_profiles").select("user_id, brand_name").in("user_id", reviewerIds)
+          : Promise.resolve({ data: [] }),
+        reviewerIds.length > 0
+          ? supabase.from("charitable_profiles").select("user_id, organization_name").in("user_id", reviewerIds)
+          : Promise.resolve({ data: [] }),
       ]);
 
-      // Create lookup maps
       const accountTypeMap = new Map(rolesResult.data?.map(r => [r.user_id, r.account_type]) || []);
       const businessNameMap = new Map(businessResult.data?.map(b => [b.user_id, b.business_name]) || []);
       const brandNameMap = new Map(brandResult.data?.map(b => [b.user_id, b.brand_name]) || []);
       const organizationNameMap = new Map(charityResult.data?.map(c => [c.user_id, c.organization_name]) || []);
 
+      const enrichedReviews = reviewsData.map((review: { reviewer_id: string }) => ({
+        ...review,
+        account_type: accountTypeMap.get(review.reviewer_id),
+        business_name: businessNameMap.get(review.reviewer_id),
+        brand_name: brandNameMap.get(review.reviewer_id),
+        organization_name: organizationNameMap.get(review.reviewer_id),
+      }));
 
-      // Combine both sources and normalize the structure, enriching with organizational data
-      const combinedReviews = [
-        ...(reviewsData || []).map(review => ({
-          ...review,
-          account_type: accountTypeMap.get(review.reviewer_id),
-          business_name: businessNameMap.get(review.reviewer_id),
-          brand_name: brandNameMap.get(review.reviewer_id),
-          organization_name: organizationNameMap.get(review.reviewer_id)
-        })),
-        ...(reviewPostsData || []).map(post => ({
-          id: post.id,
-          business_id: post.business_id,
-          reviewer_id: post.user_id,
-          staff_member_id: null,
-          rating: post.rating || 5, // Default to 5 if not set
-          title: post.content.substring(0, 50) + (post.content.length > 50 ? '...' : ''),
-          account_type: accountTypeMap.get(post.user_id),
-          business_name: businessNameMap.get(post.user_id),
-          brand_name: brandNameMap.get(post.user_id),
-          organization_name: organizationNameMap.get(post.user_id),
-          content: post.content,
-          created_at: post.created_at,
-          updated_at: post.updated_at,
-          profiles: post.profiles,
-          team_members: null
-        }))
-      ];
-      
-      // Sort by created_at
-      combinedReviews.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      
-      setReviews(combinedReviews);
+      setReviews(enrichedReviews);
     } catch (error) {
       console.error('Error fetching reviews:', error);
     } finally {
@@ -2002,182 +1505,28 @@ export default function ProfessionalProfile() {
 
       {/* Tab Content */}
       <div className="py-4 md:py-8 px-4 md:px-0">
-        {activeTab === "Posts" && (
-          loadingPosts ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading posts...</p>
-            </div>
-          ) : posts.length === 0 ? (
+        {activeTab === "Photos" && (
+          businessPhotos.length === 0 ? (
             <Card>
-              <CardContent className="p-8 sm:p-12 text-center">
-                <MessageSquare className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg sm:text-xl font-semibold mb-2">No Posts</h3>
-                <p className="text-sm sm:text-base text-muted-foreground">This user hasn't created any posts yet.</p>
+              <CardContent className="p-12 text-center">
+                <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Photos</h3>
+                <p className="text-muted-foreground">This user hasn't posted any photos yet.</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-              {posts.map((post) => (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {businessPhotos.map((photo) => (
                 <div 
-                  key={post.id} 
-                  className="group cursor-pointer"
-                  onClick={() => handlePostClick(post)}
+                  key={photo.id} 
+                  className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setSelectedBusinessPhoto(photo)}
                 >
-                  {/* Image */}
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-                    {post.image_urls && post.image_urls.length > 0 ? (
-                      <>
-                        <img
-                          src={post.image_urls[0]}
-                          alt={post.content.substring(0, 50)}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                          style={{ imageRendering: '-webkit-optimize-contrast' }}
-                        />
-                        {post.image_urls.length > 1 && (
-                          <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-medium">
-                            +{post.image_urls.length - 1}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/60">
-                        <MessageSquare className="w-8 h-8 text-muted-foreground/40" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info below image */}
-                  <div className="pt-2.5 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-foreground line-clamp-1 leading-tight">
-                        {post.content}
-                      </p>
-                      {post.post_type === 'review' && post.rating && (
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <Star className="w-3.5 h-3.5 fill-[#C1A46D] text-[#C1A46D]" />
-                          <span className="text-xs font-medium text-foreground">{post.rating.toFixed(1)}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {post.post_type && (
-                      <p className="text-xs text-muted-foreground capitalize">{post.post_type === 'tip' ? 'Pro Tip' : post.post_type}</p>
-                    )}
-
-                    <div className="flex items-center gap-3 text-muted-foreground text-xs pt-0.5">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        {post.likes_count}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageSquare className="w-3 h-3" />
-                        {post.comments_count}
-                      </span>
-                    </div>
-                  </div>
+                  <img src={photo.photo_url} alt={photo.caption || ""} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
           )
-        )}
-
-        {activeTab === "Photos" && (
-          (() => {
-            const { postPhotos, businessPhotos } = getPhotos();
-            const hasPhotos = postPhotos.length > 0 || businessPhotos.length > 0;
-            
-            return !hasPhotos ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Photos</h3>
-                  <p className="text-muted-foreground">This user hasn't posted any photos yet.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {/* Business Photos */}
-                {businessPhotos.map((photo) => (
-                  <div 
-                    key={`business-${photo.id}`} 
-                    className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setSelectedBusinessPhoto(photo)}
-                  >
-                    <img src={photo.photo_url} alt={photo.caption || ""} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-                
-                {/* Post Photos */}
-                {postPhotos.map((post) => 
-                  post.image_urls.map((imageUrl, idx) => (
-                    <div 
-                      key={`${post.id}-${idx}`} 
-                      className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => handlePostClick(post)}
-                    >
-                      <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ))
-                )}
-              </div>
-            );
-          })()
-        )}
-
-        {activeTab === "Videos" && (
-          (() => {
-            const { videoPosts, videoEvents } = getVideos();
-            const allVideos = [...videoPosts, ...videoEvents];
-            
-            return allVideos.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Videos</h3>
-                  <p className="text-muted-foreground">This user hasn't posted any videos yet.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {videoPosts.map((post) => (
-                  <Card 
-                    key={post.id} 
-                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-all"
-                    onClick={() => handlePostClick(post)}
-                  >
-                    <div className="relative aspect-video bg-muted flex items-center justify-center">
-                      {post.video_url ? (
-                        <video
-                          src={post.video_url}
-                          className="w-full h-full object-cover"
-                          controls={false}
-                        />
-                      ) : post.image_urls && post.image_urls.length > 0 ? (
-                        <>
-                          <img
-                            src={post.image_urls[0]}
-                            alt={post.content.substring(0, 50)}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-                              <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-black border-b-8 border-b-transparent ml-1" />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <Globe className="w-12 h-12 text-muted-foreground" />
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <p className="text-sm line-clamp-2">{post.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            );
-          })()
         )}
 
         {activeTab === "Events" && (
@@ -2738,258 +2087,6 @@ export default function ProfessionalProfile() {
         />
       )}
 
-      {/* Post Detail Dialog */}
-      <Dialog open={!!selectedPost} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedPost(null);
-          setPostComments([]);
-          setNewComment("");
-          setIsLiked(false);
-          setIsSaved(false);
-        }
-      }}>
-        <DialogContent className="max-w-6xl w-full h-[100dvh] md:h-[85vh] overflow-hidden p-0 gap-0">
-          <VisuallyHidden>
-            <DialogTitle>Post Details</DialogTitle>
-          </VisuallyHidden>
-          {selectedPost && selectedPost.profiles && (
-            <div className="flex flex-col md:grid md:grid-cols-2 h-full">
-              {/* Left: Image/Video/Content with Reaction Buttons */}
-              <div className="bg-black flex items-center justify-center relative flex-1 md:flex-none min-h-[50vh] md:min-h-0 md:h-full">
-                {selectedPost.video_url ? (
-                  <video
-                    src={selectedPost.video_url}
-                    controls
-                    className="max-w-full max-h-full"
-                    style={{ maxHeight: 'calc(85vh - 2rem)' }}
-                  />
-                ) : selectedPost.image_urls?.[0] ? (
-                  <img
-                    src={selectedPost.image_urls[0]}
-                    alt={selectedPost.content.substring(0, 50)}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                ) : (
-                  // Text-only post display (for tips/questions)
-                  <div className="w-full h-full flex items-start justify-center p-8 pr-24 pt-16">
-                    {selectedPost.post_type === 'tip' ? (
-                      <div className="w-full max-w-md space-y-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14c.015-.34.208-.646.477-.859a4 4 0 10-4.954 0c.27.213.462.519.476.859h4.002z"/>
-                            </svg>
-                          </div>
-                          <div className="inline-block px-4 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-semibold">
-                            PRO TIP
-                          </div>
-                        </div>
-                        <div className="text-white text-lg leading-relaxed text-left whitespace-pre-wrap max-h-[60vh] overflow-y-auto scrollbar-hide">{selectedPost.content}</div>
-                      </div>
-                    ) : selectedPost.post_type === 'question' ? (
-                      <div className="w-full max-w-md space-y-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/>
-                            </svg>
-                          </div>
-                          <div className="inline-block px-4 py-1.5 bg-blue-500/20 text-blue-400 rounded-full text-sm font-semibold">
-                            QUESTION
-                          </div>
-                        </div>
-                        <div className="text-white text-lg leading-relaxed text-left whitespace-pre-wrap max-h-[60vh] overflow-y-auto scrollbar-hide">{selectedPost.content}</div>
-                      </div>
-                    ) : (
-                      // Regular text post
-                      <div className="w-full max-w-md px-8">
-                        <div className="text-white text-lg leading-relaxed text-left whitespace-pre-wrap max-h-[60vh] overflow-y-auto scrollbar-hide">{selectedPost.content}</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Reaction Buttons - Right side vertical stack (TikTok style) */}
-                <div className="absolute right-3 md:right-4 bottom-4 md:bottom-20 flex flex-col items-center gap-3 md:gap-4">
-                  <button 
-                    onClick={handleLikePost}
-                    className="flex flex-col items-center gap-0.5 md:gap-1 hover:opacity-70 transition-opacity"
-                  >
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                      <Heart className={`w-5 h-5 md:w-6 md:h-6 ${isLiked ? 'fill-red-500 text-red-500' : 'text-white'}`} />
-                    </div>
-                    <span className="text-[10px] md:text-xs font-medium text-white">{localLikesCount}</span>
-                  </button>
-                  
-                  <button className="flex flex-col items-center gap-0.5 md:gap-1 hover:opacity-70 transition-opacity">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                      <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                    </div>
-                    <span className="text-[10px] md:text-xs font-medium text-white">{localCommentsCount}</span>
-                  </button>
-                  
-                  <button 
-                    onClick={handleSavePost}
-                    className="flex flex-col items-center gap-0.5 md:gap-1 hover:opacity-70 transition-opacity"
-                  >
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                      <Bookmark className={`w-5 h-5 md:w-6 md:h-6 ${isSaved ? 'fill-current text-white' : 'text-white'}`} />
-                    </div>
-                    <span className="text-[10px] md:text-xs font-medium text-white">Save</span>
-                  </button>
-                  
-                  <button 
-                    onClick={() => {
-                      setShareData({
-                        url: `${window.location.origin}/professional/${id}?post=${selectedPost.id}`,
-                        caption: selectedPost.content,
-                        title: "Share this post"
-                      });
-                      setShowShareDialog(true);
-                    }}
-                    className="flex flex-col items-center gap-0.5 md:gap-1 hover:opacity-70 transition-opacity"
-                  >
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                      <Share2 className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                    </div>
-                    <span className="text-[10px] md:text-xs font-medium text-white">Share</span>
-                  </button>
-                  
-                  {profile?.website && (
-                    <a 
-                      href={profile.website.startsWith('http://') || profile.website.startsWith('https://') 
-                        ? profile.website 
-                        : `https://${profile.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center gap-0.5 md:gap-1 hover:opacity-70 transition-opacity"
-                    >
-                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                        <Globe className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                      </div>
-                      <span className="text-[10px] md:text-xs font-medium text-white">Web</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-              
-              {/* Right: Post Details & Comments */}
-              <div className="flex flex-col flex-1 md:h-full bg-card min-h-0 max-h-[50vh] md:max-h-none">
-                {/* Post Header */}
-                <div className="p-4 border-b shrink-0">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={selectedPost.org_avatar_url || selectedPost.profiles?.avatar_url || ''} />
-                      <AvatarFallback>
-                        {(getDisplayName(
-                          selectedPost.account_type,
-                          selectedPost.business_name,
-                          selectedPost.brand_name,
-                          selectedPost.organization_name,
-                          selectedPost.profiles
-                        )?.[0] || 'U').toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <button 
-                        onClick={() => navigate(`/professional/${selectedPost.user_id}`)}
-                        className="font-semibold text-sm hover:opacity-80 transition-opacity block"
-                      >
-                        {getDisplayName(
-                          selectedPost.account_type,
-                          selectedPost.business_name,
-                          selectedPost.brand_name,
-                          selectedPost.organization_name,
-                          selectedPost.profiles
-                        )}
-                      </button>
-                      <span className="text-xs text-muted-foreground block">
-                        {formatDistanceToNow(new Date(selectedPost.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Comments Section */}
-                <ScrollArea className="flex-1 min-h-0 p-4">
-                  {/* Comments List */}
-                  <div className="space-y-4">
-                    {postComments.map((comment) => (
-                      <CommentItem
-                        key={comment.id}
-                        comment={comment}
-                        onReply={handleReplyToComment}
-                        onLike={handleLikeComment}
-                        commentLikes={commentLikes}
-                        depth={0}
-                      />
-                    ))}
-                    
-                    {postComments.length === 0 && (
-                      <div className="text-sm text-muted-foreground text-center py-8">
-                        No comments yet. Be the first to comment!
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Comment Input */}
-                <div className="border-t p-4 shrink-0 bg-card">
-                  {currentUserId ? (
-                    <div>
-                      {replyingTo && (
-                        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground bg-secondary/50 px-3 py-2 rounded">
-                          <span>Replying to @{replyingTo.username}</span>
-                          <button
-                            onClick={() => setReplyingTo(null)}
-                            className="hover:text-foreground"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-                      <div className="flex gap-2 items-center">
-                        <input
-                          type="text"
-                          placeholder={replyingTo ? `Reply to @${replyingTo.username}...` : "Add a comment..."}
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleAddComment();
-                            }
-                          }}
-                          className="flex-1 px-4 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                        <Button 
-                          size="icon" 
-                          className="flex-shrink-0"
-                          onClick={handleAddComment}
-                          disabled={!newComment.trim()}
-                        >
-                          <Send className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center text-sm text-muted-foreground py-2">
-                      <button
-                        onClick={() => navigate('/auth')}
-                        className="text-primary hover:underline"
-                      >
-                        Log in
-                      </button>
-                      {' '}to comment
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Business Photo Detail Dialog */}
       <Dialog open={!!selectedBusinessPhoto} onOpenChange={(open) => {
         if (!open) {
@@ -3019,54 +2116,6 @@ export default function ProfessionalProfile() {
                 
                 {/* Reaction Buttons Row */}
                 <div className="border-t border-white/10 px-4 py-3 flex items-center justify-around gap-4 bg-black/50 backdrop-blur-sm">
-                  <button 
-                    onClick={async () => {
-                      if (!currentUserId) {
-                        toast({ 
-                          title: "Authentication required",
-                          description: "Please log in to like photos"
-                        });
-                        return;
-                      }
-                      
-                      try {
-                        const { data: existingLike } = await supabase
-                          .from("post_likes")
-                          .select("id")
-                          .eq("post_id", selectedBusinessPhoto.id)
-                          .eq("user_id", currentUserId)
-                          .maybeSingle();
-
-                        if (existingLike) {
-                          await supabase
-                            .from("post_likes")
-                            .delete()
-                            .eq("id", existingLike.id);
-                        } else {
-                          await supabase
-                            .from("post_likes")
-                            .insert({
-                              post_id: selectedBusinessPhoto.id,
-                              user_id: currentUserId
-                            });
-                        }
-                        
-                        // Refresh the business photos to update like status
-                        await fetchBusinessPhotos();
-                      } catch (error) {
-                        console.error("Error liking photo:", error);
-                      }
-                    }}
-                    className="flex flex-col items-center gap-1 hover:opacity-70 transition-opacity"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                      <Heart className={`w-6 h-6 text-white transition-colors ${
-                        postLikes[selectedBusinessPhoto.id] ? 'fill-red-500 text-red-500' : ''
-                      }`} />
-                    </div>
-                    <span className="text-xs font-medium text-white">Like</span>
-                  </button>
-                  
                   <button 
                     onClick={() => {
                       // Scroll to comment input

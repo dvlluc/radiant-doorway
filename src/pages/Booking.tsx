@@ -188,15 +188,12 @@ export default function Booking() {
           }
         }
 
-        const [reviewsData, reviewPostsData] = await Promise.all([
-          supabase.from("reviews").select("rating").eq("business_id", resolvedId),
-          supabase.from("posts").select("rating").eq("business_id", resolvedId).eq("post_type", "review"),
-        ]);
+        const { data: reviewsData } = await supabase
+          .from("reviews")
+          .select("rating")
+          .eq("business_id", resolvedId);
 
-        const allRatings = [
-          ...(reviewsData.data || []).map(r => r.rating),
-          ...(reviewPostsData.data || []).map(p => p.rating || 5),
-        ];
+        const allRatings = (reviewsData || []).map((r) => r.rating);
         const totalReviews = allRatings.length;
         setReviewCount(totalReviews);
         if (totalReviews > 0) {

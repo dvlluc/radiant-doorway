@@ -5,6 +5,7 @@ import {
   type AppNotification,
   notificationsQueryKey,
 } from "@/lib/notifications";
+import { subscribeNotificationsRealtime } from "@/lib/notificationsRealtime";
 
 const PREVIEW_LIMIT = 5;
 
@@ -87,27 +88,7 @@ export function useNotifications(userId: string | undefined) {
 
   useEffect(() => {
     if (!userId) return;
-
-    const channel = supabase
-      .channel(`notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: notificationsQueryKey(userId) });
-          queryClient.invalidateQueries({ queryKey: ["user-stats", userId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeNotificationsRealtime(userId, queryClient);
   }, [userId, queryClient]);
 
   return {

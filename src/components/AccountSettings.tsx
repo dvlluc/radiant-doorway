@@ -187,7 +187,7 @@ export function AccountSettings() {
                   </p>
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• All your personal data will be permanently deleted</li>
-                    <li>• Your profile, posts, and reviews will be removed</li>
+                    <li>• Your profile and reviews will be removed</li>
                     <li>• Active bookings and subscriptions will be cancelled</li>
                     <li>• Any business data or partnerships will be terminated</li>
                   </ul>

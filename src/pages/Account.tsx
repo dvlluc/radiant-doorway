@@ -8,16 +8,12 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationBadge } from "@/components/NotificationBadge";
 import { 
   Shield, 
-  Bookmark, 
   Bell, 
   Users, 
   Heart,
   Calendar,
-  MessageCircle,
   Briefcase,
   Home,
-  FileText,
-  ThumbsUp,
   Menu,
   X,
   ChevronLeft
@@ -27,7 +23,6 @@ import { formatDate } from "@/utils/dateFormat";
 import { AccountSettings } from "@/components/AccountSettings";
 import { NotificationsPage } from "@/components/NotificationsPage";
 
-import { SavedItemsSection } from "@/components/SavedItemsSection";
 import { FollowersSection } from "@/components/FollowersSection";
 import { MyBookingsPage } from "@/components/MyBookingsPage";
 
@@ -51,7 +46,6 @@ type MenuSection =
   | "Purchases & Subscriptions" 
   | "Business Management"
   
-  | "Saved Items"
   | "Followers"
   | "Team Member";
 
@@ -104,7 +98,6 @@ export default function Account() {
   const [activeSection, setActiveSection] = useState<MenuSection>("Overview");
   const [accountType, setAccountType] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [savedItemsCount, setSavedItemsCount] = useState(0);
   const [followedEventsCount, setFollowedEventsCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -132,7 +125,6 @@ export default function Account() {
         'notifications': 'Notifications',
         
         'settings': 'Account Settings',
-        'saved': 'Saved Items',
         'followers': 'Followers',
         'bookings': 'My Bookings',
         'business-bookings': 'Bookings',
@@ -187,14 +179,10 @@ export default function Account() {
             charitableResult,
             brandResult,
             businessResult,
-            savedResult,
             followedResult,
             followersResult,
             followingResult,
             teamMemberResult,
-            recentPostsResult,
-            recentLikesResult,
-            recentCommentsResult
           ] = await Promise.all([
             supabase
               .from("user_roles")
@@ -222,10 +210,6 @@ export default function Account() {
               .eq("user_id", user.id)
               .maybeSingle(),
             supabase
-              .from("saved_posts")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id),
-            supabase
               .from("followed_events")
               .select("*", { count: "exact", head: true })
               .eq("user_id", user.id),
@@ -242,24 +226,6 @@ export default function Account() {
               .select("*", { count: "exact", head: true })
               .eq("member_id", user.id)
               .eq("status", "accepted"),
-            supabase
-              .from("posts")
-              .select("id, created_at")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(5),
-            supabase
-              .from("post_likes")
-              .select("created_at, post_id")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(5),
-            supabase
-              .from("post_comments")
-              .select("created_at, post_id")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(5)
           ]);
 
           if (!isMounted) return;
@@ -312,58 +278,12 @@ export default function Account() {
             organization_name: organizationName,
             avatar_url: resolvedAvatar || fallbackAvatar,
           });
-          setSavedItemsCount(savedResult.count || 0);
           setFollowedEventsCount(followedResult.count || 0);
           setFollowersCount(followersResult.count || 0);
           setFollowingCount(followingResult.count || 0);
           setIsTeamMember((teamMemberResult.count || 0) > 0);
           
-          // Build recent activities from posts, likes, and comments
-          const activities: Array<{ 
-            icon: any; 
-            title: string; 
-            date: string;
-            iconColor: string;
-            timestamp: Date;
-          }> = [];
-          
-          // Add posts
-          recentPostsResult.data?.forEach((post: any) => {
-            activities.push({
-              icon: FileText,
-              title: "You created a new post",
-              date: formatDate(post.created_at),
-              iconColor: "text-blue-500",
-              timestamp: new Date(post.created_at)
-            });
-          });
-          
-          // Add likes
-          recentLikesResult.data?.forEach((like: any) => {
-            activities.push({
-              icon: ThumbsUp,
-              title: "You liked a post",
-              date: formatDate(like.created_at),
-              iconColor: "text-red-500",
-              timestamp: new Date(like.created_at)
-            });
-          });
-          
-          // Add comments
-          recentCommentsResult.data?.forEach((comment: any) => {
-            activities.push({
-              icon: MessageCircle,
-              title: "You commented on a post",
-              date: formatDate(comment.created_at),
-              iconColor: "text-green-500",
-              timestamp: new Date(comment.created_at)
-            });
-          });
-          
-          // Sort by timestamp and take top 10
-          activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-          setRecentActivities(activities.slice(0, 10));
-          
+          setRecentActivities([]);
           setLoading(false);
         })();
 
@@ -506,10 +426,6 @@ export default function Account() {
       return <NotificationsPage />;
     }
 
-    if (activeSection === "Saved Items") {
-      return <SavedItemsSection />;
-    }
-
     if (activeSection === "Followers") {
       return <FollowersSection userId={user.id} />;
     }
@@ -542,21 +458,6 @@ export default function Account() {
                     </div>
                   </div>
                   <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setActiveSection("Saved Items")}
-            >
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Saved Items</p>
-                    <p className="text-xl sm:text-2xl font-bold">{savedItemsCount}</p>
-                  </div>
-                  <Bookmark className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                 </div>
               </CardContent>
             </Card>

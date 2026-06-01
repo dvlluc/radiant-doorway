@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Users, FileText, ShieldAlert, BarChart3, Settings, Calendar } from "lucide-react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminUsers } from "@/components/admin/AdminUsers";
-import { AdminPosts } from "@/components/admin/AdminPosts";
 import { AdminBookings } from "@/components/admin/AdminBookings";
 import { AdminReports } from "@/components/admin/AdminReports";
 import { AdminRefunds } from "@/components/admin/AdminRefunds";
@@ -101,7 +100,7 @@ export default function AdminPanel() {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-12 gap-1">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-11 gap-1">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -109,10 +108,6 @@ export default function AdminPanel() {
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="posts" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Posts</span>
             </TabsTrigger>
             <TabsTrigger value="bookings" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -155,11 +150,6 @@ export default function AdminPanel() {
           <TabsContent value="users">
             <AdminUsers />
           </TabsContent>
-
-          <TabsContent value="posts">
-            <AdminPosts />
-          </TabsContent>
-
 
           <TabsContent value="bookings">
             <AdminBookings />

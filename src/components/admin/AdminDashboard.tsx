@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, Briefcase, Calendar, TrendingUp } from "lucide-react";
+import { Users, Briefcase, Calendar, TrendingUp } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
-  totalPosts: number;
   totalJobs: number;
   totalEvents: number;
   newUsersToday: number;
-  newPostsToday: number;
 }
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
-    totalPosts: 0,
     totalJobs: 0,
     totalEvents: 0,
     newUsersToday: 0,
-    newPostsToday: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,45 +25,26 @@ export function AdminDashboard() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        // Get total users
-        const { count: totalUsers } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true });
-
-        // Get total posts
-        const { count: totalPosts } = await supabase
-          .from("posts")
-          .select("*", { count: "exact", head: true });
-
-        // Get total jobs
-        const { count: totalJobs } = await supabase
-          .from("jobs")
-          .select("*", { count: "exact", head: true });
-
-        // Get total events
-        const { count: totalEvents } = await supabase
-          .from("events")
-          .select("*", { count: "exact", head: true });
-
-        // Get new users today
-        const { count: newUsersToday } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", today.toISOString());
-
-        // Get new posts today
-        const { count: newPostsToday } = await supabase
-          .from("posts")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", today.toISOString());
+        const [
+          { count: totalUsers },
+          { count: totalJobs },
+          { count: totalEvents },
+          { count: newUsersToday },
+        ] = await Promise.all([
+          supabase.from("profiles").select("*", { count: "exact", head: true }),
+          supabase.from("jobs").select("*", { count: "exact", head: true }),
+          supabase.from("events").select("*", { count: "exact", head: true }),
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .gte("created_at", today.toISOString()),
+        ]);
 
         setStats({
           totalUsers: totalUsers || 0,
-          totalPosts: totalPosts || 0,
           totalJobs: totalJobs || 0,
           totalEvents: totalEvents || 0,
           newUsersToday: newUsersToday || 0,
-          newPostsToday: newPostsToday || 0,
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -87,12 +64,6 @@ export function AdminDashboard() {
       description: `+${stats.newUsersToday} today`,
     },
     {
-      title: "Total Posts",
-      value: stats.totalPosts,
-      icon: FileText,
-      description: `+${stats.newPostsToday} today`,
-    },
-    {
       title: "Total Jobs",
       value: stats.totalJobs,
       icon: Briefcase,
@@ -103,6 +74,12 @@ export function AdminDashboard() {
       value: stats.totalEvents,
       icon: Calendar,
       description: "Upcoming events",
+    },
+    {
+      title: "User Growth",
+      value: stats.newUsersToday,
+      icon: TrendingUp,
+      description: "New users today",
     },
   ];
 
@@ -136,13 +113,9 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">User Growth</span>
               <span className="text-sm text-muted-foreground">
-                {stats.newUsersToday > 0 ? `+${((stats.newUsersToday / stats.totalUsers) * 100).toFixed(1)}%` : "0%"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Content Activity</span>
-              <span className="text-sm text-muted-foreground">
-                {stats.newPostsToday > 0 ? `+${((stats.newPostsToday / stats.totalPosts) * 100).toFixed(1)}%` : "0%"}
+                {stats.newUsersToday > 0 && stats.totalUsers > 0
+                  ? `+${((stats.newUsersToday / stats.totalUsers) * 100).toFixed(1)}%`
+                  : "0%"}
               </span>
             </div>
           </div>

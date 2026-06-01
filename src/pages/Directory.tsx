@@ -101,15 +101,12 @@ export default function Directory() {
               .eq('user_id', business.user_id)
               .maybeSingle();
 
-            const [reviewsData, reviewPostsData] = await Promise.all([
-              supabase.from('reviews').select('rating').eq('business_id', business.user_id),
-              supabase.from('posts').select('rating').eq('business_id', business.user_id).eq('post_type', 'review'),
-            ]);
+            const { data: reviewsData } = await supabase
+              .from("reviews")
+              .select("rating")
+              .eq("business_id", business.user_id);
 
-            const allRatings = [
-              ...(reviewsData.data || []).map(r => r.rating),
-              ...(reviewPostsData.data || []).map(p => p.rating || 5),
-            ];
+            const allRatings = (reviewsData || []).map((r) => r.rating);
 
             const averageRating = allRatings.length > 0
               ? allRatings.reduce((sum, rating) => sum + rating, 0) / allRatings.length
