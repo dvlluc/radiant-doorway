@@ -12,6 +12,7 @@ import { getCurrencyFromLocation } from "@/utils/currency";
 import { StyleDetailModal } from "@/components/StyleDetailModal";
 import { ShareDialog } from "@/components/ShareDialog";
 import { MobileNav } from "@/components/MobileNav";
+import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
 
 interface Style {
   id: string;
@@ -40,13 +41,14 @@ const categories = [
   { value: "lashes", label: "Lashes" },
 ];
 
-const StyleCard = memo(({ style, isSaved, onSave, onNavigate, onShare, horizontal }: {
+const StyleCard = memo(({ style, isSaved, onSave, onNavigate, onShare, horizontal, showBookButton }: {
   style: Style;
   isSaved: boolean;
   onSave: (id: string) => void;
   onNavigate: (id: string) => void;
   onShare: (id: string, name: string) => void;
   horizontal?: boolean;
+  showBookButton?: boolean;
 }) => {
   const currency = getCurrencyFromLocation(style.location || "United States");
   const navigate = useNavigate();
@@ -130,13 +132,15 @@ const StyleCard = memo(({ style, isSaved, onSave, onNavigate, onShare, horizonta
           )}
         </div>
 
-        <Button
-          size="sm"
-          className="w-full text-xs h-9 sm:h-8 mt-2 rounded-lg"
-          onClick={handleBook}
-        >
-          Book this Look
-        </Button>
+        {showBookButton && (
+          <Button
+            size="sm"
+            className="w-full text-xs h-9 sm:h-8 mt-2 rounded-lg"
+            onClick={handleBook}
+          >
+            Book this Look
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -146,6 +150,7 @@ StyleCard.displayName = "StyleCard";
 export default function ExploreStyles() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canBook } = useCanBookAsCustomer();
   const { toast } = useToast();
   const [styles, setStyles] = useState<Style[]>([]);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -383,6 +388,7 @@ export default function ExploreStyles() {
                 isSaved={savedIds.has(style.id)}
                 onSave={toggleSave}
                 horizontal={!!hasSearch}
+                showBookButton={canBook}
                 onNavigate={(id) => {
                   setSelectedStyleId(id);
                   setModalOpen(true);

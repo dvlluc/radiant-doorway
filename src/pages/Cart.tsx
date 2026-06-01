@@ -13,6 +13,7 @@ import {
   parseBookingCartData,
 } from "@/lib/booking/cart";
 import { useInvalidateBookingCart } from "@/hooks/useBookingCart";
+import { resolveAccountType } from "@/lib/booking/createAppointment";
 import { getCurrencyFromLocation } from "@/utils/currency";
 
 interface CartRow {
@@ -63,8 +64,24 @@ export default function Cart() {
       navigate("/auth", { state: { returnTo: "/cart" } });
       return;
     }
-    loadCart().finally(() => setLoading(false));
-  }, [user, navigate, loadCart]);
+
+    const init = async () => {
+      const accountType = await resolveAccountType(user.id);
+      if (accountType !== "individual") {
+        toast({
+          title: "Cart unavailable",
+          description: "Only individual accounts can book business services.",
+          variant: "destructive",
+        });
+        navigate("/account");
+        return;
+      }
+      await loadCart();
+      setLoading(false);
+    };
+
+    init();
+  }, [user, navigate, loadCart, toast]);
 
   const removeItem = async (id: string) => {
     const { error } = await supabase.from("cart_items").delete().eq("id", id);

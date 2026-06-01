@@ -21,6 +21,7 @@ import { RatingBreakdown } from "@/components/RatingBreakdown";
 import { InviteProfessionalDialog } from "@/components/business/InviteProfessionalDialog";
 import { ProfileStylesTab } from "@/components/profile/ProfileStylesTab";
 import { formatDate } from "@/utils/dateFormat";
+import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
 
 interface Event {
   id: string;
@@ -209,6 +210,7 @@ export default function ProfessionalProfile() {
   const { id } = useParams();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { canBook } = useCanBookAsCustomer();
   
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -1822,7 +1824,7 @@ export default function ProfessionalProfile() {
 
         {/* Action Buttons - Full Width CTA */}
         <div className="px-4 pb-4 space-y-2">
-          {profile.accountType === "business" && (
+          {profile.accountType === "business" && canBook && (
             <Button 
               className="w-full font-semibold text-sm h-11"
               onClick={() => navigate(`/booking/${id}`)}
@@ -1942,7 +1944,7 @@ export default function ProfessionalProfile() {
 
           {/* Action Buttons - Desktop */}
           <div className="flex flex-wrap justify-start gap-3">
-            {profile.accountType === "business" && (
+            {profile.accountType === "business" && canBook && (
               <Button 
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6 text-sm"
                 size="sm"
@@ -2534,12 +2536,14 @@ export default function ProfessionalProfile() {
                                 </span>
                               )}
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => navigate(`/booking/${id}`, { state: { preSelectedService: service } })}
-                            >
-                              Book
-                            </Button>
+                            {canBook && (
+                              <Button
+                                size="sm"
+                                onClick={() => navigate(`/booking/${id}`, { state: { preSelectedService: service } })}
+                              >
+                                Book
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>

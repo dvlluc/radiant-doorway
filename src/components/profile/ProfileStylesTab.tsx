@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getCurrencyFromLocation } from "@/utils/currency";
 import { StyleDetailModal } from "@/components/StyleDetailModal";
+import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
 
 interface Style {
   id: string;
@@ -40,6 +41,7 @@ interface ProfileStylesTabProps {
 export function ProfileStylesTab({ professionalId, isOwnProfile }: ProfileStylesTabProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canBook } = useCanBookAsCustomer();
   const { toast } = useToast();
   const [styles, setStyles] = useState<Style[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,13 +211,15 @@ export function ProfileStylesTab({ professionalId, isOwnProfile }: ProfileStyles
                     )}
                   </div>
 
-                  <Button
-                    size="sm"
-                    className="mt-1 h-7 w-full rounded-md text-[11px] font-semibold"
-                    onClick={(e) => handleBookThisLook(style, e)}
-                  >
-                    Book This Look
-                  </Button>
+                  {canBook && (
+                    <Button
+                      size="sm"
+                      className="mt-1 h-7 w-full rounded-md text-[11px] font-semibold"
+                      onClick={(e) => handleBookThisLook(style, e)}
+                    >
+                      Book This Look
+                    </Button>
+                  )}
                 </div>
               </div>
             );

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { getCurrencyFromLocation } from "@/utils/currency";
 import { useSmartBack } from "@/hooks/useSmartBack";
+import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
 
 interface StyleData {
   id: string;
@@ -48,6 +49,7 @@ export default function StyleDetail() {
   const navigate = useNavigate();
   const goBack = useSmartBack("/explore-styles");
   const { user } = useAuth();
+  const { canBook } = useCanBookAsCustomer();
   const { toast } = useToast();
   const [style, setStyle] = useState<StyleData | null>(null);
   const [professional, setProfessional] = useState<Professional | null>(null);
@@ -256,9 +258,11 @@ export default function StyleDetail() {
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
-              <Button className="flex-1 h-12 text-sm font-semibold" onClick={handleBookThisLook}>
-                Book This Look
-              </Button>
+              {canBook && (
+                <Button className="flex-1 h-12 text-sm font-semibold" onClick={handleBookThisLook}>
+                  Book This Look
+                </Button>
+              )}
               <Button variant="outline" size="icon" className="h-12 w-12" onClick={toggleSave}>
                 {isSaved ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
               </Button>

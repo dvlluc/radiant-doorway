@@ -13,6 +13,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { RouteShell } from "./components/RouteShell";
 import { PageTransition } from "./components/PageTransition";
 import { ContentPlaceholder } from "./components/ContentPlaceholder";
+import { CustomerBookingGuard } from "./components/CustomerBookingGuard";
 
 // Lazy load pages for code splitting
 const Directory = lazy(() => import("./pages/Directory"));
@@ -108,11 +109,11 @@ const App = () => (
                   <Route path="/directory" element={<Directory />} />
                   <Route path="/professional/:id" element={<ProfessionalProfile />} />
                   <Route path="/profile/:id" element={<ProfessionalProfile />} />
-                  <Route path="/booking/:id" element={<Booking />} />
-                  <Route path="/booking/:id/datetime" element={<BookingDateTime />} />
-                  <Route path="/booking/:id/payment" element={<BookingPayment />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/cart/book/:cartItemId" element={<CartItemBooking />} />
+                  <Route path="/booking/:id" element={<CustomerBookingGuard><Booking /></CustomerBookingGuard>} />
+                  <Route path="/booking/:id/datetime" element={<CustomerBookingGuard><BookingDateTime /></CustomerBookingGuard>} />
+                  <Route path="/booking/:id/payment" element={<CustomerBookingGuard><BookingPayment /></CustomerBookingGuard>} />
+                  <Route path="/cart" element={<CustomerBookingGuard><Cart /></CustomerBookingGuard>} />
+                  <Route path="/cart/book/:cartItemId" element={<CustomerBookingGuard><CartItemBooking /></CustomerBookingGuard>} />
                   <Route path="/create-test-accounts" element={<CreateTestAccounts />} />
                   <Route path="/explore-styles" element={<ExploreStyles />} />
                   <Route path="/explore-styles/:id" element={<StyleDetail />} />

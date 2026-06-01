@@ -1,1 +1,4 @@
 project_id = "obbxuqcyomrjkypgksae"
+
+[functions.book-appointment]
+verify_jwt = true

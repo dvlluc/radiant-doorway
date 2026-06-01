@@ -12,6 +12,7 @@ import { getCurrencyFromLocation } from "@/utils/currency";
 import { ShareDialog } from "@/components/ShareDialog";
 import { addServiceToCart, isCartDuplicateError } from "@/lib/booking/cart";
 import { useBookingCart, useInvalidateBookingCart } from "@/hooks/useBookingCart";
+import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
 
 interface StyleData {
   id: string;
@@ -56,7 +57,8 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data: bookingCart } = useBookingCart(open ? user?.id : undefined);
+  const { canBook } = useCanBookAsCustomer();
+  const { data: bookingCart } = useBookingCart(canBook && open ? user?.id : undefined);
   const invalidateBookingCart = useInvalidateBookingCart();
   const styleInCart = styleId ? bookingCart?.productIds.includes(styleId) : false;
   const [style, setStyle] = useState<StyleData | null>(null);
@@ -346,13 +348,15 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
                 </div>
               )}
 
-              <Button
-                className="h-12 w-full rounded-xl text-sm font-semibold"
-                onClick={handleAddToCart}
-                disabled={styleInCart}
-              >
-                {styleInCart ? "Already in cart" : "Add to cart"}
-              </Button>
+              {canBook && (
+                <Button
+                  className="h-12 w-full rounded-xl text-sm font-semibold"
+                  onClick={handleAddToCart}
+                  disabled={styleInCart}
+                >
+                  {styleInCart ? "Already in cart" : "Add to cart"}
+                </Button>
+              )}
             </div>
 
             <ShareDialog

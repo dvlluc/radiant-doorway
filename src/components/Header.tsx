@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBookingCart } from "@/hooks/useBookingCart";
+import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
 import { cn } from "@/lib/utils";
 import {
   shouldShowAppSidebar,
@@ -47,7 +48,8 @@ export const Header = memo(function Header() {
 
   // Use optimized hook for user profile
   const { data: profile } = useUserProfile(user?.id);
-  const { data: bookingCart } = useBookingCart(user?.id);
+  const { canBook } = useCanBookAsCustomer();
+  const { data: bookingCart } = useBookingCart(canBook ? user?.id : undefined);
   const cartCount = bookingCart?.count ?? 0;
 
   const handleSignOut = async () => {
@@ -173,7 +175,7 @@ export const Header = memo(function Header() {
             </Button>
           )}
 
-          {user && (
+          {user && canBook && (
             <Button
               variant="ghost"
               size="icon"

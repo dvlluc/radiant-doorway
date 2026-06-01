@@ -11,7 +11,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useBookingCalendar } from "@/hooks/useBookingCalendar";
 import { parseBookingCartData } from "@/lib/booking/cart";
+import {
+  assertCanBookBusinessService,
+  BookingForbiddenError,
+  createBookingAppointment,
+  TimeSlotUnavailableError,
+} from "@/lib/booking/createAppointment";
 import { useInvalidateBookingCart } from "@/hooks/useBookingCart";
+import { resolveAccountType } from "@/lib/booking/createAppointment";
 import { getCurrencyFromLocation } from "@/utils/currency";
 
 export default function CartItemBooking() {
@@ -41,6 +48,18 @@ export default function CartItemBooking() {
 
     const load = async () => {
       if (!cartItemId) return;
+
+      const accountType = await resolveAccountType(user.id);
+      if (accountType !== "individual") {
+        toast({
+          title: "Booking not available",
+          description: "Only individual accounts can book business services.",
+          variant: "destructive",
+        });
+        navigate("/account");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("cart_items")
         .select("*")
@@ -67,6 +86,16 @@ export default function CartItemBooking() {
       setDuration(meta.duration);
       setPrice(Number(data.price));
       setProductImage(data.product_image);
+      try {
+        await assertCanBookBusinessService(user.id, meta.businessId);
+      } catch (err) {
+        if (err instanceof BookingForbiddenError) {
+          toast({ title: "Booking not available", description: err.message, variant: "destructive" });
+          navigate("/cart");
+          return;
+        }
+      }
+
       setCartLoading(false);
     };
 
@@ -81,30 +110,16 @@ export default function CartItemBooking() {
 
     setBooking(true);
     try {
-      const { data, error } = await supabase.functions.invoke("book-appointment", {
-        body: {
-          businessId,
-          businessName,
-          staffAuthId: calendar.selectedStaffAuthId,
-          startTime: range.start.toISOString(),
-          endTime: range.end.toISOString(),
-          serviceName,
-          cartItemId,
-          specialRequests: specialRequests || null,
-        },
+      await createBookingAppointment({
+        businessId,
+        businessName,
+        staffAuthId: calendar.selectedStaffAuthId,
+        startTime: range.start.toISOString(),
+        endTime: range.end.toISOString(),
+        serviceName,
+        cartItemId,
+        specialRequests: specialRequests || null,
       });
-
-      if (error) throw error;
-      if (data?.error === "TIME_SLOT_UNAVAILABLE") {
-        toast({
-          title: "Time unavailable",
-          description: "This slot was just booked. Pick another time.",
-          variant: "destructive",
-        });
-        calendar.setSelectedTime("");
-        return;
-      }
-      if (data?.error) throw new Error(data.error);
 
       await invalidateBookingCart(user.id);
 
@@ -115,9 +130,22 @@ export default function CartItemBooking() {
       navigate("/account?tab=bookings");
     } catch (err) {
       console.error(err);
+      if (err instanceof TimeSlotUnavailableError) {
+        toast({
+          title: "Time unavailable",
+          description: err.message,
+          variant: "destructive",
+        });
+        calendar.setSelectedTime("");
+        return;
+      }
+      if (err instanceof BookingForbiddenError) {
+        toast({ title: "Booking not available", description: err.message, variant: "destructive" });
+        return;
+      }
       toast({
         title: "Booking failed",
-        description: "Please try another time.",
+        description: err instanceof Error ? err.message : "Please try another time.",
         variant: "destructive",
       });
     } finally {

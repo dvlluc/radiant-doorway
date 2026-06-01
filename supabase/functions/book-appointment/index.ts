@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, handleCorsPreflight, jsonResponse } from "../_shared/cors.ts";
 
 interface BookAppointmentBody {
   businessId: string;
@@ -19,10 +15,22 @@ interface BookAppointmentBody {
   cartItemId?: string | null;
 }
 
+async function resolveAccountType(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<string> {
+  const { data } = await supabase
+    .from("user_roles")
+    .select("account_type")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return data?.account_type || "individual";
+}
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflight = handleCorsPreflight(req);
+  if (preflight) return preflight;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -32,11 +40,15 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader) {
+      return jsonResponse({ error: "No authorization header" }, 401);
+    }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("Not authenticated");
+    if (userError || !userData.user) {
+      return jsonResponse({ error: "Not authenticated" }, 401);
+    }
 
     const user = userData.user;
     const body = (await req.json()) as BookAppointmentBody;
@@ -54,13 +66,41 @@ serve(async (req) => {
     } = body;
 
     if (!businessId || !startTime || !endTime || !serviceName) {
-      throw new Error("Missing required booking fields");
+      return jsonResponse({ error: "Missing required booking fields" }, 400);
+    }
+
+    const accountType = await resolveAccountType(supabase, user.id);
+    if (accountType !== "individual") {
+      return jsonResponse(
+        {
+          error: "FORBIDDEN",
+          message: "Only individual accounts can book business services.",
+        },
+        403
+      );
+    }
+
+    if (businessId === user.id) {
+      return jsonResponse(
+        { error: "FORBIDDEN", message: "You cannot book your own business." },
+        403
+      );
+    }
+
+    const { data: businessProfile } = await supabase
+      .from("business_profiles")
+      .select("user_id")
+      .eq("user_id", businessId)
+      .maybeSingle();
+
+    if (!businessProfile) {
+      return jsonResponse({ error: "Business not found" }, 404);
     }
 
     const start = new Date(startTime);
     const end = new Date(endTime);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
-      throw new Error("Invalid appointment time range");
+      return jsonResponse({ error: "Invalid appointment time range" }, 400);
     }
 
     const { data: conflicts, error: conflictError } = await supabase.rpc("get_staff_busy_slots", {
@@ -70,11 +110,15 @@ serve(async (req) => {
       p_range_end: end.toISOString(),
     });
 
-    if (conflictError) throw conflictError;
+    if (conflictError) {
+      console.error("[BOOK-APPOINTMENT] conflict check:", conflictError);
+      return jsonResponse({ error: conflictError.message }, 500);
+    }
+
     if (conflicts && conflicts.length > 0) {
-      return new Response(
-        JSON.stringify({ error: "TIME_SLOT_UNAVAILABLE", message: "This time is no longer available." }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return jsonResponse(
+        { error: "TIME_SLOT_UNAVAILABLE", message: "This time is no longer available." },
+        409
       );
     }
 
@@ -102,29 +146,27 @@ serve(async (req) => {
       .single();
 
     if (insertError) {
-      if (insertError.message?.includes("TIME_SLOT_UNAVAILABLE")) {
-        return new Response(
-          JSON.stringify({ error: "TIME_SLOT_UNAVAILABLE", message: "This time is no longer available." }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      if (
+        insertError.message?.includes("TIME_SLOT_UNAVAILABLE") ||
+        insertError.code === "P0001"
+      ) {
+        return jsonResponse(
+          { error: "TIME_SLOT_UNAVAILABLE", message: "This time is no longer available." },
+          409
         );
       }
-      throw insertError;
+      console.error("[BOOK-APPOINTMENT] insert:", insertError);
+      return jsonResponse({ error: insertError.message }, 500);
     }
 
     if (cartItemId) {
       await supabase.from("cart_items").delete().eq("id", cartItemId).eq("user_id", user.id);
     }
 
-    return new Response(
-      JSON.stringify({ appointmentId: appointment.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonResponse({ appointmentId: appointment.id }, 200);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Booking failed";
     console.error("[BOOK-APPOINTMENT]", message);
-    return new Response(JSON.stringify({ error: message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: message }, 500);
   }
 });
