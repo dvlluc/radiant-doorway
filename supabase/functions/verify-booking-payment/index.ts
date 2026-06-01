@@ -174,25 +174,6 @@ serve(async (req) => {
       // Don't fail the booking if email fails
     }
 
-    // Send in-app notification
-    try {
-      await supabaseClient
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          type: 'booking',
-          title: 'Booking Confirmed!',
-          message: `Your appointment at ${metadata.business_name} on ${formattedDate} at ${time} has been confirmed.`,
-          read: false,
-          action_url: '/account?tab=bookings'
-        });
-
-      console.log("[VERIFY-BOOKING-PAYMENT] In-app notification sent");
-    } catch (notificationError) {
-      console.error("[VERIFY-BOOKING-PAYMENT] Error sending notification:", notificationError);
-      // Don't fail the booking if notification fails
-    }
-
     return new Response(
       JSON.stringify({ success: true, message: "Booking confirmed" }), 
       {

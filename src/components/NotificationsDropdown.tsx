@@ -10,16 +10,12 @@ import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { TeamInvitationActions } from "./TeamInvitationActions";
 import { useNotifications } from "@/hooks/useNotifications";
-
-interface NotificationItem {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  read: boolean;
-  created_at: string;
-  action_url: string | null;
-}
+import {
+  parseNotificationActionUrl,
+  shouldSkipNotificationNavigation,
+  type AppNotification,
+} from "@/lib/notifications";
+import { cn } from "@/lib/utils";
 
 interface NotificationsDropdownProps {
   userId: string | null;
@@ -27,39 +23,36 @@ interface NotificationsDropdownProps {
 
 export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
   const navigate = useNavigate();
-  const { notifications, hasUnread, markAsRead, deleteNotification } = useNotifications(userId || undefined);
+  const {
+    previewNotifications,
+    unreadCount,
+    hasUnread,
+    markAsRead,
+    deleteNotification,
+  } = useNotifications(userId || undefined);
 
   const handleDelete = (notificationId: string, event?: React.MouseEvent) => {
     event?.stopPropagation();
-    deleteNotification(notificationId);
+    void deleteNotification(notificationId);
   };
 
-  const handleNotificationClick = (notification: NotificationItem) => {
-    // Don't handle click for team invitations - they have their own actions
-    if (notification.type === 'team_invitation') {
+  const handleNotificationClick = async (notification: AppNotification) => {
+    if (notification.type === "team_invitation") {
       return;
     }
-    
-    markAsRead(notification.id);
-    // Don't redirect for welcome notifications or system notifications with discover action
-    if (notification.type.toLowerCase().includes('welcome') || 
-        notification.title.toLowerCase().includes('welcome') ||
-        (notification.type === 'system' && notification.action_url === '/discover')) {
+
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+
+    if (shouldSkipNotificationNavigation(notification)) {
       return;
     }
+
     if (notification.action_url) {
       navigate(notification.action_url);
     } else {
-      navigate("/account", { state: { activeSection: "Notifications" } });
-    }
-  };
-
-  const parseActionUrl = (actionUrl: string | null) => {
-    if (!actionUrl) return null;
-    try {
-      return JSON.parse(actionUrl);
-    } catch {
-      return null;
+      navigate("/account?tab=notifications");
     }
   };
 
@@ -69,7 +62,9 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
         <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 relative">
           <Bell className="w-5 h-5" />
           {hasUnread && (
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-semibold bg-destructive text-destructive-foreground rounded-full border-2 border-background">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -78,39 +73,41 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
           <div className="p-4 text-center text-sm text-muted-foreground">
             Please sign in to view notifications
           </div>
-        ) : notifications.length === 0 ? (
+        ) : previewNotifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             No notifications
           </div>
         ) : (
           <>
-            {notifications.map((notification) => {
-              const actionData = parseActionUrl(notification.action_url);
-              const isTeamInvitation = notification.type === 'team_invitation' && actionData?.type === 'team_invitation';
-              
+            {previewNotifications.map((notification) => {
+              const actionData = parseNotificationActionUrl(notification.action_url);
+              const isTeamInvitation =
+                notification.type === "team_invitation" &&
+                actionData?.type === "team_invitation";
+
               return (
                 <DropdownMenuItem
                   key={notification.id}
-                  className={`flex flex-col items-start p-4 ${!isTeamInvitation ? 'cursor-pointer hover:bg-muted' : ''} transition-colors ${
-                    !notification.read ? "bg-accent/50" : ""
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
+                  className={cn(
+                    "flex flex-col items-start p-4 transition-colors",
+                    !isTeamInvitation && "cursor-pointer hover:bg-muted",
+                    !notification.read && "bg-accent/50"
+                  )}
+                  onClick={() => void handleNotificationClick(notification)}
                   onSelect={(e) => isTeamInvitation && e.preventDefault()}
                 >
                   <div className="flex items-start justify-between w-full gap-2">
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {notification.message}
-                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{notification.message}</p>
                       <p className="text-xs text-muted-foreground mt-2">
                         {formatDistanceToNow(new Date(notification.created_at), {
                           addSuffix: true,
                         })}
                       </p>
-                       {isTeamInvitation && actionData?.invitation_id && (
+                      {isTeamInvitation && actionData?.invitation_id && (
                         <TeamInvitationActions
-                          invitationId={actionData.invitation_id}
+                          invitationId={String(actionData.invitation_id)}
                           onAction={() => {
                             handleDelete(notification.id);
                           }}
@@ -136,9 +133,12 @@ export function NotificationsDropdown({ userId }: NotificationsDropdownProps) {
             })}
             <DropdownMenuItem
               className="text-center text-sm text-primary cursor-pointer"
-              onClick={() => navigate("/account", { state: { activeSection: "Notifications" } })}
+              onClick={() => navigate("/account?tab=notifications")}
             >
               View all notifications
+              {unreadCount > 0 && (
+                <span className="ml-2 text-xs text-muted-foreground">({unreadCount} unread)</span>
+              )}
             </DropdownMenuItem>
           </>
         )}

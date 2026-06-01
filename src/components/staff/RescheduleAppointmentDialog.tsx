@@ -47,6 +47,7 @@ export function RescheduleAppointmentDialog({
         .update({
           start_time: startTime,
           end_time: endTime,
+          status: "rescheduled",
         })
         .eq("id", appointment.id);
 

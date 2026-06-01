@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBadge } from "@/components/NotificationBadge";
 import { Users, Sparkles, ShoppingBag, Bell, ChevronDown } from "lucide-react";
 import { useSidebarCollapse } from "@/components/sidebar-collapse";
 
@@ -29,7 +30,7 @@ const navLabelClass = "font-medium text-[15px] truncate min-w-0 flex-1";
 
 export function Sidebar() {
   const { user } = useAuth();
-  const { hasUnread } = useNotifications(user?.id);
+  const { unreadCount } = useNotifications(user?.id);
   const navigate = useNavigate();
   const { collapsed } = useSidebarCollapse();
 
@@ -69,9 +70,7 @@ export function Sidebar() {
 
         {user && (
           <button
-            onClick={() =>
-              navigate("/account", { state: { activeSection: "Notifications" } })
-            }
+            onClick={() => navigate("/account?tab=notifications")}
             title={collapsed ? "Notifications" : undefined}
             className={cn(
               navItemClass(false),
@@ -80,13 +79,13 @@ export function Sidebar() {
           >
             <div className="relative w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
               <Bell className="w-4 h-4 text-white" />
-              {hasUnread && collapsed && (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-destructive rounded-full border border-background" />
-              )}
+              {collapsed && <NotificationBadge count={unreadCount} collapsed />}
             </div>
-            {!collapsed && <span className={navLabelClass}>Notifications</span>}
-            {hasUnread && !collapsed && (
-              <span className="absolute top-[15px] left-[145px] w-2 h-2 bg-destructive rounded-full border border-background" />
+            {!collapsed && (
+              <>
+                <span className={navLabelClass}>Notifications</span>
+                <NotificationBadge count={unreadCount} />
+              </>
             )}
           </button>
         )}

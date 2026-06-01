@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, useLocation, Link } from "react-router-dom"; // Link for footer navigation
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationBadge } from "@/components/NotificationBadge";
 import { 
   Shield, 
   Bookmark, 
@@ -97,13 +99,13 @@ const charitableMenuItems: MenuSection[] = [
 
 export default function Account() {
   const { user } = useAuth();
+  const { unreadCount: unreadNotificationsCount } = useNotifications(user?.id);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<MenuSection>("Overview");
   const [accountType, setAccountType] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [savedItemsCount, setSavedItemsCount] = useState(0);
   const [followedEventsCount, setFollowedEventsCount] = useState(0);
-  const [notificationsCount, setNotificationsCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [isTeamMember, setIsTeamMember] = useState(false);
@@ -132,7 +134,8 @@ export default function Account() {
         'settings': 'Account Settings',
         'saved': 'Saved Items',
         'followers': 'Followers',
-        'bookings': 'My Bookings'
+        'bookings': 'My Bookings',
+        'business-bookings': 'Bookings',
       };
       
       const section = sectionMap[tabParam.toLowerCase()];
@@ -186,7 +189,6 @@ export default function Account() {
             businessResult,
             savedResult,
             followedResult,
-            unreadResult,
             followersResult,
             followingResult,
             teamMemberResult,
@@ -227,11 +229,6 @@ export default function Account() {
               .from("followed_events")
               .select("*", { count: "exact", head: true })
               .eq("user_id", user.id),
-            supabase
-              .from("notifications")
-              .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id)
-              .eq("read", false),
             supabase
               .from("user_follows")
               .select("*", { count: "exact", head: true })
@@ -317,7 +314,6 @@ export default function Account() {
           });
           setSavedItemsCount(savedResult.count || 0);
           setFollowedEventsCount(followedResult.count || 0);
-          setNotificationsCount(unreadResult.count || 0);
           setFollowersCount(followersResult.count || 0);
           setFollowingCount(followingResult.count || 0);
           setIsTeamMember((teamMemberResult.count || 0) > 0);
@@ -573,7 +569,7 @@ export default function Account() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Notifications</p>
-                    <p className="text-xl sm:text-2xl font-bold">{notificationsCount}</p>
+                    <p className="text-xl sm:text-2xl font-bold">{unreadNotificationsCount}</p>
                   </div>
                   <Bell className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                 </div>
@@ -671,13 +667,16 @@ export default function Account() {
                   handleMenuClick(item);
                   onMenuClick?.();
                 }}
-                className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
+                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   activeSection === item
                     ? "bg-muted font-medium"
                     : "hover:bg-muted/50"
                 }`}
               >
-                {displayLabel}
+                <span className="flex-1 text-left">{displayLabel}</span>
+                {item === "Notifications" && (
+                  <NotificationBadge count={unreadNotificationsCount} />
+                )}
               </button>
               {showSeparator && (
                 <div className="my-2 border-b border-border"></div>

@@ -29,7 +29,7 @@ const More = () => {
       icon: Bell,
       label: "Notifications",
       description: "View your notifications",
-      onClick: () => navigate("/account", { state: { section: "Notifications" } }),
+      onClick: () => navigate("/account?tab=notifications"),
     },
     {
       icon: Calendar,
