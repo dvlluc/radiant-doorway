@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -88,8 +88,186 @@ const charitableMenuItems: MenuSection[] = [
   "Notifications",
   "My Bookings",
   "Purchases & Subscriptions",
-  
 ];
+
+function getInformationLabel(accountType: string | null): string {
+  if (accountType === "charitable_partner") return "Charity Information";
+  if (accountType === "brand") return "Brand Information";
+  if (accountType === "business") return "Business Information";
+  return "Personal Information";
+}
+
+function buildMenuItems(accountType: string | null, isTeamMember: boolean): MenuSection[] {
+  const base =
+    accountType === "individual"
+      ? individualMenuItems
+      : accountType === "charitable_partner"
+        ? charitableMenuItems
+        : accountType === "business"
+          ? businessMenuItems
+          : brandMenuItems;
+
+  if (!isTeamMember || base.includes("Team Member")) {
+    return base;
+  }
+
+  const notificationsIndex = base.indexOf("Notifications");
+  if (notificationsIndex === -1) {
+    return base;
+  }
+
+  return [
+    ...base.slice(0, notificationsIndex + 1),
+    "Team Member",
+    ...base.slice(notificationsIndex + 1),
+  ];
+}
+
+function getAccountTypeLabel(accountType: string | null, displayName: string): string {
+  if (accountType === "charitable_partner") return "Charity Partner";
+  if (accountType === "brand") return "Brand";
+  if (accountType === "business") return "Business";
+  return `@${(displayName || "user").toLowerCase().replace(/\s+/g, "")}`;
+}
+
+function getMenuItemDisplayLabel(item: MenuSection, informationLabel: string): string {
+  if (
+    item === "Brand Information" ||
+    item === "Business Information" ||
+    item === "Charity Information"
+  ) {
+    return informationLabel;
+  }
+  return item;
+}
+
+type AccountSidebarProps = {
+  activeSection: MenuSection;
+  menuItems: MenuSection[];
+  informationLabel: string;
+  displayName: string;
+  avatarInitial: string;
+  avatarUrl?: string | null;
+  accountTypeLabel: string;
+  unreadNotificationsCount: number;
+  onSectionSelect: (section: MenuSection) => void;
+  onProfileClick: () => void;
+  onMenuClick?: () => void;
+};
+
+const AccountMenuItem = memo(function AccountMenuItem({
+  item,
+  isActive,
+  displayLabel,
+  unreadNotificationsCount,
+  onSelect,
+  onMenuClick,
+}: {
+  item: MenuSection;
+  isActive: boolean;
+  displayLabel: string;
+  unreadNotificationsCount: number;
+  onSelect: (section: MenuSection) => void;
+  onMenuClick?: () => void;
+}) {
+  const showSeparator = item === "Notifications";
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          onSelect(item);
+          onMenuClick?.();
+        }}
+        className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+          isActive ? "bg-muted font-medium" : "hover:bg-muted/50"
+        }`}
+      >
+        <span className="flex-1 text-left">{displayLabel}</span>
+        {item === "Notifications" && (
+          <NotificationBadge count={unreadNotificationsCount} />
+        )}
+      </button>
+      {showSeparator && <div className="my-2 border-b border-border" />}
+    </div>
+  );
+});
+
+const AccountSidebar = memo(function AccountSidebar({
+  activeSection,
+  menuItems,
+  informationLabel,
+  displayName,
+  avatarInitial,
+  avatarUrl,
+  accountTypeLabel,
+  unreadNotificationsCount,
+  onSectionSelect,
+  onProfileClick,
+  onMenuClick,
+}: AccountSidebarProps) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 pb-6 border-b">
+        <Avatar className="w-12 h-12">
+          <AvatarImage src={avatarUrl ?? undefined} />
+          <AvatarFallback className="bg-muted text-foreground">
+            {avatarInitial}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p
+            className="font-semibold cursor-pointer hover:text-primary transition-colors"
+            onClick={() => {
+              onProfileClick();
+              onMenuClick?.();
+            }}
+          >
+            {displayName}
+          </p>
+          <p className="text-sm text-muted-foreground">{accountTypeLabel}</p>
+        </div>
+      </div>
+
+      <nav className="space-y-1">
+        {menuItems.map((item) => (
+          <AccountMenuItem
+            key={item}
+            item={item}
+            isActive={activeSection === item}
+            displayLabel={getMenuItemDisplayLabel(item, informationLabel)}
+            unreadNotificationsCount={unreadNotificationsCount}
+            onSelect={onSectionSelect}
+            onMenuClick={onMenuClick}
+          />
+        ))}
+      </nav>
+
+      <div className="pt-6 border-t space-y-2 text-sm text-muted-foreground">
+        <div className="flex gap-3">
+          <Link to="/help" className="hover:text-foreground" onClick={onMenuClick}>
+            Help
+          </Link>
+          <Link to="/terms" className="hover:text-foreground" onClick={onMenuClick}>
+            Terms
+          </Link>
+          <Link to="/privacy" className="hover:text-foreground" onClick={onMenuClick}>
+            Privacy
+          </Link>
+        </div>
+        <div className="flex gap-3">
+          <Link to="/refund" className="hover:text-foreground" onClick={onMenuClick}>
+            Refund
+          </Link>
+          <Link to="/policy" className="hover:text-foreground" onClick={onMenuClick}>
+            Policy
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function Account() {
   const { user } = useAuth();
@@ -318,6 +496,88 @@ export default function Account() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeSection]);
 
+  const displayName =
+    accountType !== "individual" && profile?.organization_name
+      ? profile.organization_name
+      : profile?.first_name || profile?.display_name || profile?.username || "User";
+  const avatarInitial = (displayName || "U").charAt(0).toUpperCase();
+
+  const menuItems = useMemo(
+    () => buildMenuItems(accountType, isTeamMember),
+    [accountType, isTeamMember],
+  );
+  const informationLabel = useMemo(
+    () => getInformationLabel(accountType),
+    [accountType],
+  );
+  const accountTypeLabel = useMemo(
+    () => getAccountTypeLabel(accountType, displayName),
+    [accountType, displayName],
+  );
+
+  const handleSectionSelect = useCallback(
+    (section: MenuSection) => {
+      if (section === "Home") {
+        navigate("/explore-styles");
+      } else {
+        setActiveSection(section);
+      }
+    },
+    [navigate],
+  );
+
+  const handleProfileClick = useCallback(() => {
+    if (user) {
+      navigate(`/profile/${user.id}`);
+    }
+  }, [navigate, user]);
+
+  const handleMobileMenuClose = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
+  const sidebarProps = useMemo((): Omit<AccountSidebarProps, "onMenuClick"> | null => {
+    if (!user) {
+      return null;
+    }
+    return {
+      activeSection,
+      menuItems,
+      informationLabel,
+      displayName,
+      avatarInitial,
+      avatarUrl: profile?.avatar_url,
+      accountTypeLabel,
+      unreadNotificationsCount,
+      onSectionSelect: handleSectionSelect,
+      onProfileClick: handleProfileClick,
+    };
+  }, [
+    user,
+    activeSection,
+    menuItems,
+    informationLabel,
+    displayName,
+    avatarInitial,
+    profile?.avatar_url,
+    accountTypeLabel,
+    unreadNotificationsCount,
+    handleSectionSelect,
+    handleProfileClick,
+  ]);
+
+  const pageTitle = useMemo(
+    () =>
+      activeSection === "Overview"
+        ? "Account Overview"
+        : activeSection === "Brand Information" ||
+            activeSection === "Business Information" ||
+            activeSection === "Charity Information"
+          ? informationLabel
+          : activeSection,
+    [activeSection, informationLabel],
+  );
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse px-4">
@@ -354,53 +614,9 @@ export default function Account() {
     );
   }
 
-  if (!user) {
+  if (!user || !sidebarProps) {
     return null;
   }
-
-  // Use organization name for non-individual accounts, otherwise use first_name  
-  const displayName = accountType !== "individual" && profile?.organization_name 
-    ? profile.organization_name 
-    : profile?.first_name || profile?.display_name || profile?.username || "User";
-  const avatarInitial = (displayName || "U").charAt(0).toUpperCase();
-  
-  // Determine which menu items to show based on account type
-  let menuItems = accountType === "individual" 
-    ? individualMenuItems 
-    : accountType === "charitable_partner"
-    ? charitableMenuItems
-    : accountType === "business"
-    ? businessMenuItems
-    : brandMenuItems;
-  
-  // Add Team Member section if user is part of any team
-  if (isTeamMember && !menuItems.includes("Team Member")) {
-    // Insert Team Member after Notifications for all account types
-    const notificationsIndex = menuItems.indexOf("Notifications");
-    if (notificationsIndex !== -1) {
-      menuItems = [
-        ...menuItems.slice(0, notificationsIndex + 1),
-        "Team Member",
-        ...menuItems.slice(notificationsIndex + 1)
-      ];
-    }
-  }
-  
-  // Get the appropriate label for the information section
-  const getInformationLabel = () => {
-    if (accountType === "charitable_partner") return "Charity Information";
-    if (accountType === "brand") return "Brand Information";
-    if (accountType === "business") return "Business Information";
-    return "Personal Information";
-  };
-
-  const handleMenuClick = (section: MenuSection) => {
-    if (section === "Home") {
-      navigate("/explore-styles");
-    } else {
-      setActiveSection(section);
-    }
-  };
 
   const renderContent = () => {
     if (activeSection === "My Bookings") {
@@ -525,83 +741,6 @@ export default function Account() {
     );
   };
 
-  // Sidebar content component for reuse
-  const SidebarContent = ({ onMenuClick }: { onMenuClick?: () => void }) => (
-    <div className="space-y-6">
-      {/* User Profile */}
-      <div className="flex items-center gap-3 pb-6 border-b">
-        <Avatar className="w-12 h-12">
-          <AvatarImage src={profile?.avatar_url} />
-          <AvatarFallback className="bg-muted text-foreground">
-            {avatarInitial}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <p 
-            className="font-semibold cursor-pointer hover:text-primary transition-colors"
-            onClick={() => {
-              navigate(`/profile/${user.id}`);
-              onMenuClick?.();
-            }}
-          >
-            {displayName}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {accountType === 'charitable_partner' ? 'Charity Partner' : 
-             accountType === 'brand' ? 'Brand' : 
-             accountType === 'business' ? 'Business' : 
-             `@${(displayName || 'user').toLowerCase().replace(/\s+/g, '')}`}
-          </p>
-        </div>
-      </div>
-
-      {/* Menu Items */}
-      <nav className="space-y-1">
-        {menuItems.map((item) => {
-          const showSeparator = item === "Notifications";
-          const displayLabel = (item === "Brand Information" || item === "Business Information" || item === "Charity Information") ? getInformationLabel() : item;
-          
-          return (
-            <div key={item}>
-              <button
-                onClick={() => {
-                  handleMenuClick(item);
-                  onMenuClick?.();
-                }}
-                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  activeSection === item
-                    ? "bg-muted font-medium"
-                    : "hover:bg-muted/50"
-                }`}
-              >
-                <span className="flex-1 text-left">{displayLabel}</span>
-                {item === "Notifications" && (
-                  <NotificationBadge count={unreadNotificationsCount} />
-                )}
-              </button>
-              {showSeparator && (
-                <div className="my-2 border-b border-border"></div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* Footer Links */}
-      <div className="pt-6 border-t space-y-2 text-sm text-muted-foreground">
-        <div className="flex gap-3">
-          <Link to="/help" className="hover:text-foreground" onClick={onMenuClick}>Help</Link>
-          <Link to="/terms" className="hover:text-foreground" onClick={onMenuClick}>Terms</Link>
-          <Link to="/privacy" className="hover:text-foreground" onClick={onMenuClick}>Privacy</Link>
-        </div>
-        <div className="flex gap-3">
-          <Link to="/refund" className="hover:text-foreground" onClick={onMenuClick}>Refund</Link>
-          <Link to="/policy" className="hover:text-foreground" onClick={onMenuClick}>Policy</Link>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-7xl mx-auto pt-0 px-0 sm:px-4 overflow-x-hidden">
       {/* Mobile Menu Header */}
@@ -626,7 +765,7 @@ export default function Account() {
                 </SheetClose>
               </div>
               <div className="flex-1 overflow-y-auto p-4">
-                <SidebarContent onMenuClick={() => setMobileMenuOpen(false)} />
+                <AccountSidebar {...sidebarProps} onMenuClick={handleMobileMenuClose} />
               </div>
             </SheetContent>
           </Sheet>
@@ -634,15 +773,13 @@ export default function Account() {
 
       {/* Desktop Left Sidebar */}
       <div className="hidden md:block w-64 space-y-6 border-r pr-6 flex-shrink-0">
-        <SidebarContent />
+        <AccountSidebar {...sidebarProps} />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-4 md:space-y-6 md:pl-6">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 font-playfair pt-4 md:pt-0">
-          {activeSection === "Overview" ? "Account Overview" : 
-           (activeSection === "Brand Information" || activeSection === "Business Information" || activeSection === "Charity Information") ? getInformationLabel() :
-           activeSection}
+          {pageTitle}
         </h1>
 
         {renderContent()}
