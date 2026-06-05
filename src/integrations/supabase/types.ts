@@ -2344,6 +2344,10 @@ export type Database = {
     }
     Functions: {
       auto_complete_arrived_appointments: { Args: never; Returns: undefined }
+      cancel_customer_appointment: {
+        Args: { p_appointment_id: string; p_reason?: string | null }
+        Returns: undefined
+      }
       cleanup_expired_cart_items: { Args: never; Returns: undefined }
       get_staff_busy_slots: {
         Args: {

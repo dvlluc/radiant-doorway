@@ -3,8 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  cancelAppointmentAsCustomer,
+  cancelAppointmentAsStaff,
+  promoteWaitingListAfterCancellation,
+} from "@/lib/booking/cancelAppointment";
 
 interface CancelAppointmentDialogProps {
   open: boolean;
@@ -14,78 +18,42 @@ interface CancelAppointmentDialogProps {
     title: string;
   };
   onUpdate: () => void;
+  cancelledBy?: "staff" | "customer";
 }
 
-export function CancelAppointmentDialog({ 
-  open, 
-  onOpenChange, 
+export function CancelAppointmentDialog({
+  open,
+  onOpenChange,
   appointment,
-  onUpdate 
+  onUpdate,
+  cancelledBy = "staff",
 }: CancelAppointmentDialogProps) {
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const isCustomerCancellation = cancelledBy === "customer";
 
   const handleCancel = async () => {
     setLoading(true);
 
     try {
-      // Get appointment details before cancelling
-      const { data: aptData } = await supabase
-        .from("appointments")
-        .select("user_id, staff_member_id, start_time")
-        .eq("id", appointment.id)
-        .single();
+      if (isCustomerCancellation) {
+        await cancelAppointmentAsCustomer(appointment.id, reason);
+      } else {
+        await cancelAppointmentAsStaff(appointment.id, reason);
+      }
 
-      if (!aptData) throw new Error("Appointment not found");
-
-      // Cancel the appointment
-      const { error } = await supabase
-        .from("appointments")
-        .update({
-          status: "cancelled",
-          description: reason ? `Cancelled: ${reason}` : "Cancelled by staff",
-        })
-        .eq("id", appointment.id);
-
-      if (error) throw error;
-
-      // Get business name for promotion
-      const { data: businessProfile } = await supabase
-        .from("business_profiles")
-        .select("business_name")
-        .eq("user_id", aptData.user_id)
-        .single();
-
-      // Extract date and time from start_time
-      const startDate = new Date(aptData.start_time);
-      const date = startDate.toISOString().split('T')[0];
-      const hours = startDate.getHours();
-      const minutes = startDate.getMinutes();
-      const period = hours >= 12 ? 'PM' : 'AM';
-      const displayHours = hours % 12 || 12;
-      const time = `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-
-      // Try to promote someone from waiting list
       try {
-        await supabase.functions.invoke('promote-waiting-list', {
-          body: {
-            cancelled_appointment_id: appointment.id,
-            business_id: aptData.user_id,
-            staff_member_id: aptData.staff_member_id,
-            date: date,
-            time: time,
-            business_name: businessProfile?.business_name || 'Business'
-          }
-        });
+        await promoteWaitingListAfterCancellation(appointment.id);
       } catch (promoteError) {
         console.error("Error promoting waiting list:", promoteError);
-        // Don't fail the cancellation if promotion fails
       }
 
       toast({
         title: "Appointment cancelled",
-        description: "The appointment has been successfully cancelled.",
+        description: isCustomerCancellation
+          ? "Your booking has been cancelled."
+          : "The appointment has been successfully cancelled.",
       });
 
       onUpdate();
@@ -109,7 +77,9 @@ export function CancelAppointmentDialog({
         <DialogHeader>
           <DialogTitle>Cancel Appointment</DialogTitle>
           <DialogDescription>
-            Are you sure you want to cancel "{appointment.title}"? This action cannot be undone.
+            {isCustomerCancellation
+              ? `Are you sure you want to cancel your booking for "${appointment.title}"? Refund eligibility depends on the business cancellation policy.`
+              : `Are you sure you want to cancel "${appointment.title}"? This action cannot be undone.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -134,11 +104,7 @@ export function CancelAppointmentDialog({
             >
               Go Back
             </Button>
-            <Button 
-              variant="destructive"
-              onClick={handleCancel} 
-              disabled={loading}
-            >
+            <Button variant="destructive" onClick={handleCancel} disabled={loading}>
               Cancel Appointment
             </Button>
           </div>

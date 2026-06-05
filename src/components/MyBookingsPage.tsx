@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { isAppointmentCancellable } from "@/lib/booking/cancelAppointment";
 
 interface Appointment {
   id: string;
@@ -797,7 +798,7 @@ export function MyBookingsPage({ viewType = 'customer' }: MyBookingsPageProps) {
           upcomingAppointments.map((apt) => (
             <Card key={apt.id}>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-lg">{apt.title}</h3>
@@ -817,6 +818,7 @@ export function MyBookingsPage({ viewType = 'customer' }: MyBookingsPageProps) {
                       </span>
                     </div>
                   </div>
+                  {renderCustomerActionsMenu(apt)}
                 </div>
               </CardContent>
             </Card>
@@ -975,6 +977,40 @@ export function MyBookingsPage({ viewType = 'customer' }: MyBookingsPageProps) {
     }
   };
 
+  const openCancelDialog = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setCancelDialogOpen(true);
+  };
+
+  const renderCustomerActionsMenu = (
+    appointment: Pick<Appointment, "id" | "title" | "status">,
+    entryType: "appointment" | "waiting" = "appointment"
+  ) => {
+    if (viewType !== "customer" || entryType === "waiting") {
+      return null;
+    }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <MoreHorizontal className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() => openCancelDialog(appointment as Appointment)}
+            disabled={!isAppointmentCancellable(appointment.status)}
+            className="text-destructive"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
   const renderListView = () => {
     const allEntries = [
       ...appointments.map(apt => ({ ...apt, entryType: 'appointment' as const })),
@@ -1006,7 +1042,7 @@ export function MyBookingsPage({ viewType = 'customer' }: MyBookingsPageProps) {
           allEntries.map((entry) => (
             <Card key={entry.id}>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">{entry.title}</h3>
                     {entry.description && (
@@ -1025,14 +1061,17 @@ export function MyBookingsPage({ viewType = 'customer' }: MyBookingsPageProps) {
                       )}
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    entry.status === "scheduled" ? "bg-blue-100 text-blue-700" :
-                    entry.status === "completed" ? "bg-green-100 text-green-700" :
-                    entry.status === "waiting" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-gray-100 text-gray-700"
-                  }`}>
-                    {entry.status}
-                  </span>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      entry.status === "scheduled" ? "bg-blue-100 text-blue-700" :
+                      entry.status === "completed" ? "bg-green-100 text-green-700" :
+                      entry.status === "waiting" ? "bg-yellow-100 text-yellow-700" :
+                      "bg-gray-100 text-gray-700"
+                    }`}>
+                      {entry.status}
+                    </span>
+                    {renderCustomerActionsMenu(entry, entry.entryType)}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1382,6 +1421,7 @@ export function MyBookingsPage({ viewType = 'customer' }: MyBookingsPageProps) {
               title: selectedAppointment.title,
             }}
             onUpdate={fetchAppointments}
+            cancelledBy={viewType === "customer" ? "customer" : "staff"}
           />
           <RescheduleAppointmentDialog
             open={rescheduleDialogOpen}

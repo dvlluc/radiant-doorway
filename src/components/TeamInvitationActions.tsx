@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Check, X } from "lucide-react";
+import {
+  canAcceptTeamInvitation,
+  isAlreadyTeamMemberError,
+  TEAM_MEMBERSHIP_BLOCKED_MESSAGE,
+} from "@/lib/teamMembership";
 
 interface TeamInvitationActionsProps {
   invitationId: string;
@@ -11,12 +16,50 @@ interface TeamInvitationActionsProps {
 
 export function TeamInvitationActions({ invitationId, onAction }: TeamInvitationActionsProps) {
   const [loading, setLoading] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(true);
+  const [canAccept, setCanAccept] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      setCheckingEligibility(true);
+
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          setCanAccept(false);
+          return;
+        }
+
+        const { data: invitation, error: invitationError } = await supabase
+          .from("team_members")
+          .select("business_id")
+          .eq("id", invitationId)
+          .single();
+
+        if (invitationError) throw invitationError;
+
+        const eligibility = await canAcceptTeamInvitation(user.id, invitation.business_id);
+        setCanAccept(eligibility.canAccept);
+      } catch (error) {
+        console.error("Error checking team invitation eligibility:", error);
+        setCanAccept(false);
+      } finally {
+        setCheckingEligibility(false);
+      }
+    };
+
+    void checkEligibility();
+  }, [invitationId]);
 
   const handleAccept = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast({
           title: "Error",
@@ -26,7 +69,25 @@ export function TeamInvitationActions({ invitationId, onAction }: TeamInvitation
         return;
       }
 
-      // Update team member status
+      const { data: invitation, error: invitationError } = await supabase
+        .from("team_members")
+        .select("business_id")
+        .eq("id", invitationId)
+        .single();
+
+      if (invitationError) throw invitationError;
+
+      const eligibility = await canAcceptTeamInvitation(user.id, invitation.business_id);
+      if (!eligibility.canAccept) {
+        setCanAccept(false);
+        toast({
+          title: "Cannot accept invitation",
+          description: TEAM_MEMBERSHIP_BLOCKED_MESSAGE,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error: updateError } = await supabase
         .from("team_members")
         .update({
@@ -43,15 +104,16 @@ export function TeamInvitationActions({ invitationId, onAction }: TeamInvitation
         description: "You are now part of the team!",
       });
 
-      // Dispatch custom event to notify Account page to refresh
-      window.dispatchEvent(new CustomEvent('teamMembershipChanged'));
+      window.dispatchEvent(new CustomEvent("teamMembershipChanged"));
 
       onAction();
     } catch (error) {
       console.error("Error accepting invitation:", error);
       toast({
-        title: "Error",
-        description: "Failed to accept invitation. Please try again.",
+        title: "Cannot accept invitation",
+        description: isAlreadyTeamMemberError(error)
+          ? TEAM_MEMBERSHIP_BLOCKED_MESSAGE
+          : "Failed to accept invitation. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -62,7 +124,6 @@ export function TeamInvitationActions({ invitationId, onAction }: TeamInvitation
   const handleReject = async () => {
     setLoading(true);
     try {
-      // Delete the invitation
       const { error: deleteError } = await supabase
         .from("team_members")
         .delete()
@@ -89,32 +150,37 @@ export function TeamInvitationActions({ invitationId, onAction }: TeamInvitation
   };
 
   return (
-    <div className="flex gap-2 mt-2">
-      <Button
-        size="sm"
-        onClick={handleAccept}
-        disabled={loading}
-        className="flex-1"
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            <Check className="mr-1 h-4 w-4" />
-            Accept
-          </>
-        )}
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={handleReject}
-        disabled={loading}
-        className="flex-1"
-      >
-        <X className="mr-1 h-4 w-4" />
-        Reject
-      </Button>
+    <div className="space-y-2 mt-2">
+      {!checkingEligibility && !canAccept && (
+        <p className="text-xs text-muted-foreground">{TEAM_MEMBERSHIP_BLOCKED_MESSAGE}</p>
+      )}
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          onClick={handleAccept}
+          disabled={loading || checkingEligibility || !canAccept}
+          className="flex-1"
+        >
+          {loading || checkingEligibility ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <Check className="mr-1 h-4 w-4" />
+              Accept
+            </>
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleReject}
+          disabled={loading || checkingEligibility}
+          className="flex-1"
+        >
+          <X className="mr-1 h-4 w-4" />
+          Reject
+        </Button>
+      </div>
     </div>
   );
 }
