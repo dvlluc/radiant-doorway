@@ -149,23 +149,6 @@ export function AccountSettings() {
         </CardContent>
       </Card>
 
-      {/* Two-Factor Authentication */}
-      <Card>
-        <CardContent className="p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold mb-4">Two-Factor Authentication</h2>
-          
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-              <h3 className="font-medium mb-1">Enable 2FA</h3>
-              <p className="text-sm text-muted-foreground">
-                Add an extra layer of security to your account
-              </p>
-            </div>
-            <Button variant="outline" className="w-full sm:w-auto">Enable 2FA</Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Danger Zone */}
       <Card className="border-cyan-200 bg-cyan-50/50">
         <CardContent className="p-4 sm:p-6">

@@ -627,7 +627,7 @@ export default function ProfessionalProfile() {
         
         const showHours = settingsData?.show_opening_hours !== false;
         const servicesTabName = showHours ? "Services & Hours" : "Services";
-        baseTabs = ["Styles", servicesTabName, "Team", "Store", "Reviews"];
+        baseTabs = ["Styles", servicesTabName, "Team", "Reviews"];
       } else {
         baseTabs = ["Photos", "Events", "Jobs"];
       }
@@ -1992,16 +1992,6 @@ export default function ProfessionalProfile() {
 
         {activeTab === "Styles" && (
           <ProfileStylesTab professionalId={id!} isOwnProfile={isOwnProfile} />
-        )}
-
-        {activeTab === "Store" && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Store Coming Soon</h3>
-              <p className="text-muted-foreground">This business hasn't set up their store yet.</p>
-            </CardContent>
-          </Card>
         )}
 
       </div>

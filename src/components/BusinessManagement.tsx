@@ -27,7 +27,7 @@ export const BusinessManagement = () => {
             <TabsTrigger value="customers" className="text-xs md:text-sm whitespace-nowrap">Customers</TabsTrigger>
             <TabsTrigger value="restricted" className="text-xs md:text-sm whitespace-nowrap">Restricted</TabsTrigger>
             
-            <TabsTrigger value="sales" className="text-xs md:text-sm whitespace-nowrap">Sales</TabsTrigger>
+            {/* <TabsTrigger value="sales" className="text-xs md:text-sm whitespace-nowrap">Sales</TabsTrigger> */}
           </TabsList>
         </div>
 
