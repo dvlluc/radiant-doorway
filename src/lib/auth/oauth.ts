@@ -81,6 +81,12 @@ export async function isAppUserRegistered(userId: string): Promise<boolean> {
   return Boolean(data);
 }
 
+/** True while the auth user was created in this session (OAuth INSERT trigger race). */
+function wasAccountJustCreated(user: User, thresholdMs = 120_000): boolean {
+  const createdAt = new Date(user.created_at).getTime();
+  return Number.isFinite(createdAt) && Date.now() - createdAt < thresholdMs;
+}
+
 async function startGoogleOAuth(
   flow: OAuthFlow,
   options?: { accountType?: OAuthAccountType; redirectPath?: string },
@@ -254,7 +260,7 @@ export async function resolveOAuthSignupRedirect(
   const storedRedirect = sessionStorage.getItem("oauth_redirect");
   clearOAuthSessionStorage();
 
-  if (await isAppUserRegistered(user.id)) {
+  if (await isAppUserRegistered(user.id) && !wasAccountJustCreated(user)) {
     await supabase.auth.signOut();
     throw new AuthFlowError(
       "ALREADY_REGISTERED",
