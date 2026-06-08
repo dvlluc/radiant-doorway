@@ -1353,10 +1353,10 @@ export default function ProfessionalProfile() {
           <div className="flex flex-row items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold">{profile.displayName}</h1>
-              <div className="flex justify-start gap-6 mt-2 text-sm">
+              {/* <div className="flex justify-start gap-6 mt-2 text-sm">
                 <span><strong>{profile.followingCount}</strong> Following</span>
                 <span><strong>{profile.followersCount}</strong> Followers</span>
-              </div>
+              </div> */}
               {profile.accountType === "individual" && profile.bio && (
                 <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{profile.bio}</p>
               )}

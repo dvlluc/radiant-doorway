@@ -630,9 +630,9 @@ export default function Account() {
       return <NotificationsPage />;
     }
 
-    if (activeSection === "Followers") {
-      return <FollowersSection userId={user.id} />;
-    }
+    // if (activeSection === "Followers") {
+    //   return <FollowersSection userId={user.id} />;
+    // }
 
     if (activeSection === "Business Management") {
       return <BusinessManagement />;
