@@ -9,6 +9,7 @@ import { Image, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BusinessCategoryMultiSelect } from "@/components/BusinessCategoryMultiSelect";
 import { getCurrencyFromLocation } from "@/utils/currency";
+import { getServicePhotoUrls } from "@/lib/servicePhotos";
 
 interface PhotoItem {
   preview: string;
@@ -45,12 +46,6 @@ const emptyFormData = {
   bufferTime: "",
   businessCategories: [] as string[],
 };
-
-function getServicePhotoUrls(service: ServiceFormService): string[] {
-  if (service.image_urls?.length) return service.image_urls;
-  if (service.image_url) return [service.image_url];
-  return [];
-}
 
 export function ServiceFormDialog({
   open,

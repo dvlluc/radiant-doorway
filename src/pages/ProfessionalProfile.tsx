@@ -20,6 +20,8 @@ import { ShareDialog } from "@/components/ShareDialog";
 import { RatingBreakdown } from "@/components/RatingBreakdown";
 import { InviteProfessionalDialog } from "@/components/business/InviteProfessionalDialog";
 import { ServiceFormDialog } from "@/components/business/ServiceFormDialog";
+import { ServiceCardPhoto, ServicePhotosPreviewDialog } from "@/components/business/ServicePhotosPreview";
+import { getServicePhotoUrls } from "@/lib/servicePhotos";
 import { ProfileStylesTab } from "@/components/profile/ProfileStylesTab";
 import { formatDate } from "@/utils/dateFormat";
 import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
@@ -287,6 +289,10 @@ export default function ProfessionalProfile() {
   };
 
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [servicePhotoPreview, setServicePhotoPreview] = useState<{
+    photos: string[];
+    title: string;
+  } | null>(null);
 
   // Team invite state
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -1737,6 +1743,15 @@ export default function ProfessionalProfile() {
                 onSaved={fetchBusinessServices}
               />
 
+              <ServicePhotosPreviewDialog
+                open={!!servicePhotoPreview}
+                onOpenChange={(open) => {
+                  if (!open) setServicePhotoPreview(null);
+                }}
+                photos={servicePhotoPreview?.photos || []}
+                title={servicePhotoPreview?.title}
+              />
+
               {loadingServices ? (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Loading services...</p>
@@ -1750,30 +1765,20 @@ export default function ProfessionalProfile() {
               ) : (
                 <div className="space-y-3">
                   {businessServices.map((service) => {
-                    const servicePhotos = service.image_urls?.length
-                      ? service.image_urls
-                      : service.image_url
-                        ? [service.image_url]
-                        : [];
+                    const servicePhotos = getServicePhotoUrls(service);
 
                     return (
                     <Card key={service.id} className="hover:shadow-md transition-shadow overflow-hidden">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
-                          {servicePhotos.length > 0 && (
-                            <div className="relative shrink-0">
-                              <img
-                                src={servicePhotos[0]}
-                                alt={service.name}
-                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover"
-                              />
-                              {servicePhotos.length > 1 && (
-                                <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
-                                  +{servicePhotos.length - 1}
-                                </span>
-                              )}
-                            </div>
-                          )}
+                          <ServiceCardPhoto
+                            photos={servicePhotos}
+                            alt={service.name}
+                            onPreview={() => setServicePhotoPreview({
+                              photos: servicePhotos,
+                              title: service.name,
+                            })}
+                          />
                           <div className="flex flex-1 min-w-0 items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold">{service.name}</h4>

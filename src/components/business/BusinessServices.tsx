@@ -8,6 +8,8 @@ import { Loader2, Plus, Pencil, Trash2, Scissors, Percent } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getCurrencyFromLocation } from "@/utils/currency";
 import { ServiceFormDialog, type ServiceFormService } from "./ServiceFormDialog";
+import { ServiceCardPhoto, ServicePhotosPreviewDialog } from "./ServicePhotosPreview";
+import { getServicePhotoUrls } from "@/lib/servicePhotos";
 
 interface Service extends ServiceFormService {
   is_active: boolean;
@@ -27,6 +29,10 @@ export const BusinessServices = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [currency, setCurrency] = useState({ symbol: "$", code: "USD" });
+  const [servicePhotoPreview, setServicePhotoPreview] = useState<{
+    photos: string[];
+    title: string;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -280,40 +286,67 @@ export const BusinessServices = () => {
         onSaved={loadServices}
       />
 
+      <ServicePhotosPreviewDialog
+        open={!!servicePhotoPreview}
+        onOpenChange={(open) => {
+          if (!open) setServicePhotoPreview(null);
+        }}
+        photos={servicePhotoPreview?.photos || []}
+        title={servicePhotoPreview?.title}
+      />
+
       <div className="space-y-2">
-        {services.map(service => (
-          <div key={service.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border rounded-lg gap-3">
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm sm:text-base truncate">{service.name}</h4>
-              {service.description && (
-                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{service.description}</p>
-              )}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
-                {service.discount_active && service.original_price ? (
-                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                    <span className="line-through text-muted-foreground">
-                      {currency.symbol}{service.original_price.toFixed(2)}
-                    </span>
-                    <span className="font-semibold text-accent">
+        {services.map(service => {
+          const servicePhotos = getServicePhotoUrls(service);
+
+          return (
+          <div key={service.id} className="flex flex-col sm:flex-row sm:items-start justify-between p-3 sm:p-4 border rounded-lg gap-3">
+            <div className="flex min-w-0 flex-1 gap-3">
+              <ServiceCardPhoto
+                photos={servicePhotos}
+                alt={service.name}
+                onPreview={() => setServicePhotoPreview({
+                  photos: servicePhotos,
+                  title: service.name,
+                })}
+              />
+              <div className="min-w-0 flex-1">
+                <h4 className="font-medium text-sm sm:text-base truncate">{service.name}</h4>
+                {service.description && (
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{service.description}</p>
+                )}
+                {service.requirements && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    <span className="font-medium text-foreground">Requirements:</span> {service.requirements}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
+                  {service.discount_active && service.original_price ? (
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                      <span className="line-through text-muted-foreground">
+                        {currency.symbol}{service.original_price.toFixed(2)}
+                      </span>
+                      <span className="font-semibold text-accent">
+                        {currency.symbol}{service.price.toFixed(2)}
+                      </span>
+                      <span className="text-[10px] sm:text-xs bg-accent/20 text-accent px-1.5 sm:px-2 py-0.5 rounded">
+                        {service.discount_percentage}% OFF
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
                       {currency.symbol}{service.price.toFixed(2)}
                     </span>
-                    <span className="text-[10px] sm:text-xs bg-accent/20 text-accent px-1.5 sm:px-2 py-0.5 rounded">
-                      {service.discount_percentage}% OFF
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {currency.symbol}{service.price.toFixed(2)}
-                  </span>
-                )}
-                <span className="text-muted-foreground hidden sm:inline">•</span>
-                <span className="text-muted-foreground">{service.duration} min</span>
-                {service.buffer_time > 0 && (
-                  <>
-                    <span className="text-muted-foreground hidden sm:inline">•</span>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">+{service.buffer_time}min buffer</span>
-                  </>
-                )}
+                  )}
+                  <span className="text-muted-foreground hidden sm:inline">•</span>
+                  <span className="text-muted-foreground">{service.duration} min</span>
+                  {service.buffer_time > 0 && (
+                    <>
+                      <span className="text-muted-foreground hidden sm:inline">•</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">+{service.buffer_time}min buffer</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -357,7 +390,8 @@ export const BusinessServices = () => {
               </Button>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {services.length === 0 && (
           <div className="text-center p-6 sm:p-8 border-2 border-dashed rounded-lg">
