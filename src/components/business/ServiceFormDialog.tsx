@@ -5,24 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Image, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
+import { BusinessCategoryMultiSelect } from "@/components/BusinessCategoryMultiSelect";
 import { getCurrencyFromLocation } from "@/utils/currency";
 
-interface ServiceCategory {
-  id: string;
-  name: string;
+interface PhotoItem {
+  preview: string;
+  file?: File;
+  existingUrl?: string;
 }
 
 export interface ServiceFormService {
@@ -32,7 +23,10 @@ export interface ServiceFormService {
   price: number;
   duration: number;
   buffer_time: number;
-  category_id?: string | null;
+  business_categories?: string[] | null;
+  requirements?: string | null;
+  image_urls?: string[] | null;
+  image_url?: string | null;
 }
 
 interface ServiceFormDialogProps {
@@ -45,11 +39,18 @@ interface ServiceFormDialogProps {
 const emptyFormData = {
   name: "",
   description: "",
+  requirements: "",
   price: "",
   duration: "",
   bufferTime: "",
-  categoryId: "",
+  businessCategories: [] as string[],
 };
+
+function getServicePhotoUrls(service: ServiceFormService): string[] {
+  if (service.image_urls?.length) return service.image_urls;
+  if (service.image_url) return [service.image_url];
+  return [];
+}
 
 export function ServiceFormDialog({
   open,
@@ -59,17 +60,13 @@ export function ServiceFormDialog({
 }: ServiceFormDialogProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState(emptyFormData);
+  const [photoItems, setPhotoItems] = useState<PhotoItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [currency, setCurrency] = useState({ symbol: "$", code: "USD" });
-  const [categories, setCategories] = useState<ServiceCategory[]>([]);
-  const [categoryPopoverOpen, setCategoryPopoverOpen] = useState(false);
-  const [categorySearch, setCategorySearch] = useState("");
-  const [creatingCategory, setCreatingCategory] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     loadBusinessLocation();
-    loadCategories();
   }, [open]);
 
   useEffect(() => {
@@ -79,29 +76,29 @@ export function ServiceFormDialog({
       setFormData({
         name: editingService.name,
         description: editingService.description || "",
+        requirements: editingService.requirements || "",
         price: editingService.price.toString(),
         duration: editingService.duration.toString(),
         bufferTime: editingService.buffer_time.toString(),
-        categoryId: editingService.category_id || "",
+        businessCategories: editingService.business_categories || [],
       });
+      setPhotoItems(
+        getServicePhotoUrls(editingService).map((url) => ({
+          preview: url,
+          existingUrl: url,
+        }))
+      );
       return;
     }
 
     setFormData(emptyFormData);
+    setPhotoItems([]);
   }, [open, editingService]);
 
-  const loadCategories = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("service_categories")
-      .select("id, name")
-      .eq("user_id", user.id)
-      .order("display_order", { ascending: true })
-      .order("name", { ascending: true });
-
-    if (!error && data) setCategories(data);
+  const resetPhotoItems = (items: PhotoItem[]) => {
+    items.forEach((item) => {
+      if (item.file) URL.revokeObjectURL(item.preview);
+    });
   };
 
   const loadBusinessLocation = async () => {
@@ -148,54 +145,53 @@ export function ServiceFormDialog({
     }
   };
 
-  const handleCreateCategory = async (rawName: string) => {
-    const name = rawName.trim();
-    if (!name) return;
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    setPhotoItems((prev) => [
+      ...prev,
+      ...files.map((file) => ({
+        preview: URL.createObjectURL(file),
+        file,
+      })),
+    ]);
 
-    if (categories.some((category) => category.name.toLowerCase() === name.toLowerCase())) {
-      toast({ title: "Category already exists", variant: "destructive" });
-      return;
-    }
-
-    setCreatingCategory(true);
-    const { data, error } = await supabase
-      .from("service_categories")
-      .insert({ user_id: user.id, name })
-      .select("id, name")
-      .single();
-    setCreatingCategory(false);
-
-    if (error || !data) {
-      toast({ title: "Error", description: "Could not create category.", variant: "destructive" });
-      return;
-    }
-
-    setCategories((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
-    setFormData((prev) => ({ ...prev, categoryId: data.id }));
-    setCategorySearch("");
-    setCategoryPopoverOpen(false);
-    toast({ title: "Category created", description: `"${data.name}" is now selected.` });
+    event.target.value = "";
   };
 
-  const handleDeleteCategory = async (category: ServiceCategory) => {
-    if (!confirm(`Delete category "${category.name}"? Services using it will become uncategorized.`)) return;
+  const removePhoto = (index: number) => {
+    setPhotoItems((prev) => {
+      const item = prev[index];
+      if (item?.file) URL.revokeObjectURL(item.preview);
+      return prev.filter((_, itemIndex) => itemIndex !== index);
+    });
+  };
 
-    const { error } = await supabase
-      .from("service_categories")
-      .delete()
-      .eq("id", category.id);
+  const uploadPhotos = async (userId: string, items: PhotoItem[]) => {
+    const urls: string[] = [];
 
-    if (error) {
-      toast({ title: "Error", description: "Could not delete category.", variant: "destructive" });
-      return;
+    for (const item of items) {
+      if (item.existingUrl) {
+        urls.push(item.existingUrl);
+        continue;
+      }
+
+      if (!item.file) continue;
+
+      const ext = item.file.name.split(".").pop();
+      const path = `${userId}/services/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage
+        .from("service-photos")
+        .upload(path, item.file);
+
+      if (error) throw error;
+
+      const { data: publicUrl } = supabase.storage.from("service-photos").getPublicUrl(path);
+      urls.push(publicUrl.publicUrl);
     }
 
-    setCategories((prev) => prev.filter((item) => item.id !== category.id));
-    setFormData((prev) => (prev.categoryId === category.id ? { ...prev, categoryId: "" } : prev));
-    toast({ title: "Category deleted" });
+    return urls;
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -205,10 +201,19 @@ export function ServiceFormDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      if (!formData.categoryId) {
+      if (formData.businessCategories.length === 0) {
         toast({
           title: "Category required",
-          description: "Please select or create a service category.",
+          description: "Please select at least one service category.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (photoItems.length === 0) {
+        toast({
+          title: "Photo required",
+          description: "Please upload at least one service photo.",
           variant: "destructive",
         });
         return;
@@ -216,17 +221,23 @@ export function ServiceFormDialog({
 
       setSubmitting(true);
 
+      const imageUrls = await uploadPhotos(user.id, photoItems);
+
       const serviceData = {
         user_id: user.id,
         name: formData.name,
         description: formData.description || null,
+        requirements: formData.requirements.trim() || null,
         price: parseFloat(formData.price),
         duration: parseInt(formData.duration),
         buffer_time: parseInt(formData.bufferTime) || 0,
         is_active: true,
         currency_code: currency.code,
         currency_symbol: currency.symbol,
-        category_id: formData.categoryId,
+        business_categories: formData.businessCategories,
+        image_urls: imageUrls,
+        image_url: imageUrls[0] || null,
+        category_id: null,
       };
 
       if (editingService) {
@@ -240,6 +251,7 @@ export function ServiceFormDialog({
         if (error) throw error;
       }
 
+      resetPhotoItems(photoItems.filter((item) => item.file));
       await onSaved();
       onOpenChange(false);
       toast({
@@ -259,7 +271,13 @@ export function ServiceFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) resetPhotoItems(photoItems.filter((item) => item.file));
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg">
@@ -267,6 +285,57 @@ export function ServiceFormDialog({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm">Photo *</Label>
+            {photoItems.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {photoItems.map((item, index) => (
+                  <div key={`${item.preview}-${index}`} className="relative aspect-square">
+                    <img
+                      src={item.preview}
+                      alt={`Service photo ${index + 1}`}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-7 w-7"
+                      onClick={() => removePhoto(index)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("service-photo-input")?.click()}
+                  className="aspect-square border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-1 hover:border-primary/50 transition-colors"
+                >
+                  <Plus className="w-5 h-5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Add more</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => document.getElementById("service-photo-input")?.click()}
+                className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+              >
+                <Image className="w-8 h-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Click to upload</span>
+              </button>
+            )}
+            <input
+              id="service-photo-input"
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+          </div>
+
           <div>
             <Label htmlFor="name" className="text-sm">Service Name</Label>
             <Input
@@ -278,101 +347,13 @@ export function ServiceFormDialog({
             />
           </div>
 
-          <div>
-            <Label className="text-sm">Service Category</Label>
-            <Popover open={categoryPopoverOpen} onOpenChange={setCategoryPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  className={cn(
-                    "w-full justify-between text-sm font-normal",
-                    !formData.categoryId && "text-muted-foreground"
-                  )}
-                >
-                  {formData.categoryId
-                    ? categories.find((category) => category.id === formData.categoryId)?.name || "Select category"
-                    : "Select or create a category"}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                <Command shouldFilter={false}>
-                  <CommandInput
-                    placeholder="Search category..."
-                    value={categorySearch}
-                    onValueChange={setCategorySearch}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No categories yet.</CommandEmpty>
-                    {categories.length > 0 && (
-                      <CommandGroup>
-                        {categories.map((category) => (
-                          <CommandItem
-                            key={category.id}
-                            value={category.name}
-                            onSelect={() => {
-                              setFormData({ ...formData, categoryId: category.id });
-                              setCategoryPopoverOpen(false);
-                              setCategorySearch("");
-                            }}
-                            className="group"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.categoryId === category.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <span className="flex-1">{category.name}</span>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                event.preventDefault();
-                                handleDeleteCategory(category);
-                              }}
-                              className="ml-2 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                              aria-label={`Delete ${category.name}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                    {categorySearch.trim() &&
-                      !categories.some(
-                        (category) => category.name.toLowerCase() === categorySearch.trim().toLowerCase()
-                      ) && (
-                        <>
-                          <CommandSeparator />
-                          <CommandGroup>
-                            <CommandItem
-                              disabled={creatingCategory}
-                              onSelect={() => handleCreateCategory(categorySearch)}
-                            >
-                              <Plus className="mr-2 h-4 w-4" />
-                              Add new category "{categorySearch.trim()}"
-                            </CommandItem>
-                          </CommandGroup>
-                        </>
-                      )}
-                    {!categorySearch.trim() && (
-                      <>
-                        <CommandSeparator />
-                        <CommandGroup>
-                          <CommandItem disabled className="text-xs text-muted-foreground">
-                            Type a name above to add a new category
-                          </CommandItem>
-                        </CommandGroup>
-                      </>
-                    )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+          <div className="space-y-2">
+            <Label htmlFor="serviceCategory" className="text-sm">Service Category *</Label>
+            <BusinessCategoryMultiSelect
+              id="serviceCategory"
+              value={formData.businessCategories}
+              onChange={(businessCategories) => setFormData({ ...formData, businessCategories })}
+            />
           </div>
 
           <div>
@@ -382,6 +363,17 @@ export function ServiceFormDialog({
               value={formData.description}
               onChange={(event) => setFormData({ ...formData, description: event.target.value })}
               rows={3}
+              className="text-sm"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="requirements" className="text-sm">Requirements</Label>
+            <Textarea
+              id="requirements"
+              value={formData.requirements}
+              onChange={(event) => setFormData({ ...formData, requirements: event.target.value })}
+              rows={2}
               className="text-sm"
             />
           </div>

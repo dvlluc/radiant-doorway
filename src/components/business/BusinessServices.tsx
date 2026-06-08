@@ -86,7 +86,7 @@ export const BusinessServices = () => {
 
       const { data, error } = await supabase
         .from("services")
-        .select("id, name, description, price, duration, buffer_time, is_active, discount_percentage, original_price, discount_active, currency_code, currency_symbol, category_id")
+        .select("id, name, description, price, duration, buffer_time, is_active, discount_percentage, original_price, discount_active, currency_code, currency_symbol, business_categories, requirements, image_urls, image_url")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -112,7 +112,7 @@ export const BusinessServices = () => {
           
           const { data: updatedData } = await supabase
             .from("services")
-            .select("id, name, description, price, duration, buffer_time, is_active, discount_percentage, original_price, discount_active, currency_code, currency_symbol, category_id")
+            .select("id, name, description, price, duration, buffer_time, is_active, discount_percentage, original_price, discount_active, currency_code, currency_symbol, business_categories, requirements, image_urls, image_url")
             .eq("user_id", user.id)
             .order("created_at", { ascending: false });
           

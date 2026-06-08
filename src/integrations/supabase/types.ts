@@ -1989,6 +1989,7 @@ export type Database = {
       services: {
         Row: {
           buffer_time: number
+          business_categories: string[] | null
           category_id: string | null
           created_at: string
           currency_code: string | null
@@ -1999,16 +2000,19 @@ export type Database = {
           duration: number
           id: string
           image_url: string | null
+          image_urls: string[] | null
           is_active: boolean
           name: string
           original_price: number | null
           price: number
+          requirements: string | null
           staff_ids: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
           buffer_time?: number
+          business_categories?: string[] | null
           category_id?: string | null
           created_at?: string
           currency_code?: string | null
@@ -2019,16 +2023,19 @@ export type Database = {
           duration: number
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           is_active?: boolean
           name: string
           original_price?: number | null
           price: number
+          requirements?: string | null
           staff_ids?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
           buffer_time?: number
+          business_categories?: string[] | null
           category_id?: string | null
           created_at?: string
           currency_code?: string | null
@@ -2039,10 +2046,12 @@ export type Database = {
           duration?: number
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           is_active?: boolean
           name?: string
           original_price?: number | null
           price?: number
+          requirements?: string | null
           staff_ids?: string[] | null
           updated_at?: string
           user_id?: string

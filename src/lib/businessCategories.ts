@@ -11,6 +11,8 @@ export const BUSINESS_CATEGORIES = [
   "Aesthetics",
   "Massage",
   "Waxing",
+  "Styling",
+  "Hair",
 ] as const;
 
 export function parseBusinessCategories(value: string | null | undefined): string[] {
