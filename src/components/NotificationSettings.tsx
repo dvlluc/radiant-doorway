@@ -35,30 +35,6 @@ export function NotificationSettings() {
       title: "Booking Notifications",
       description: "Updates about your appointments and bookings",
       enabled: true
-    },
-    {
-      id: "events",
-      title: "Event Reminders",
-      description: "Notifications for upcoming workshops and events",
-      enabled: true
-    },
-    {
-      id: "market",
-      title: "Market Updates",
-      description: "Notifications about marketplace activity",
-      enabled: true
-    },
-    {
-      id: "jobs",
-      title: "Job Alerts",
-      description: "Updates about job postings and applications",
-      enabled: true
-    },
-    {
-      id: "marketing",
-      title: "Marketing Communications",
-      description: "Promotional offers and new feature announcements",
-      enabled: false
     }
   ]);
 
