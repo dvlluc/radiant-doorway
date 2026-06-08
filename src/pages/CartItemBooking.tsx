@@ -20,6 +20,7 @@ import {
 import { useInvalidateBookingCart } from "@/hooks/useBookingCart";
 import { resolveAccountType } from "@/lib/booking/createAppointment";
 import { getCurrencyFromLocation } from "@/utils/currency";
+import { formatCartItemPrice } from "@/lib/servicePrice";
 
 export default function CartItemBooking() {
   const { cartItemId } = useParams();
@@ -36,6 +37,7 @@ export default function CartItemBooking() {
   const [serviceName, setServiceName] = useState("");
   const [duration, setDuration] = useState(0);
   const [price, setPrice] = useState(0);
+  const [discountActive, setDiscountActive] = useState(false);
   const [productImage, setProductImage] = useState<string | null>(null);
 
   const calendar = useBookingCalendar(businessId, duration, Boolean(businessId && duration > 0));
@@ -85,6 +87,7 @@ export default function CartItemBooking() {
       setServiceName(meta.serviceName);
       setDuration(meta.duration);
       setPrice(Number(data.price));
+      setDiscountActive(Boolean(meta.discountActive));
       setProductImage(data.product_image);
       try {
         await assertCanBookBusinessService(user.id, meta.businessId);
@@ -173,8 +176,7 @@ export default function CartItemBooking() {
         <div>
           <p className="text-sm text-muted-foreground">{businessName}</p>
           <p className="font-semibold">
-            {currency.symbol}
-            {price} · {duration} min
+            {formatCartItemPrice(price, discountActive, currency.symbol)} · {duration} min
           </p>
         </div>
       </Card>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ interface TeamMember {
 }
 
 export const BusinessTeam = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -347,7 +349,15 @@ export const BusinessTeam = () => {
 
       <div className="space-y-4">
         {members.map(member => (
-          <Card key={member.id}>
+          <Card
+            key={member.id}
+            className={member.member_id ? "cursor-pointer hover:shadow-md transition-shadow" : undefined}
+            onClick={() => {
+              if (member.member_id) {
+                navigate(`/professional/${member.member_id}`);
+              }
+            }}
+          >
             <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-3">
               <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                 <Avatar className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
@@ -390,7 +400,10 @@ export const BusinessTeam = () => {
                         variant="ghost"
                         size="sm"
                         className="h-7 px-2 text-xs sm:h-8 sm:px-3 sm:text-sm"
-                        onClick={() => setEditMember(member)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditMember(member);
+                        }}
                       >
                         Edit
                       </Button>
@@ -399,7 +412,10 @@ export const BusinessTeam = () => {
                           variant="ghost"
                           size="sm"
                           className="h-7 px-2 text-xs sm:h-8 sm:px-3 sm:text-sm"
-                          onClick={() => setTerminateMember(member)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTerminateMember(member);
+                          }}
                         >
                           Terminate
                         </Button>

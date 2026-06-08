@@ -1672,7 +1672,17 @@ export default function ProfessionalProfile() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {teamMembers.map((member) => (
-                  <Card key={member.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <Card
+                    key={member.id}
+                    className={`overflow-hidden hover:shadow-md transition-shadow${
+                      member.member_id ? " cursor-pointer" : ""
+                    }`}
+                    onClick={() => {
+                      if (member.member_id) {
+                        navigate(`/professional/${member.member_id}`);
+                      }
+                    }}
+                  >
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4 mb-3">
                         <Avatar className="h-14 w-14">

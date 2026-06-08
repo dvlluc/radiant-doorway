@@ -15,6 +15,7 @@ import {
 import { useInvalidateBookingCart } from "@/hooks/useBookingCart";
 import { resolveAccountType } from "@/lib/booking/createAppointment";
 import { getCurrencyFromLocation } from "@/utils/currency";
+import { formatCartItemPrice } from "@/lib/servicePrice";
 
 interface CartRow {
   id: string;
@@ -150,8 +151,7 @@ export default function Cart() {
                         {meta.duration} min
                       </span>
                       <span className="font-medium text-foreground">
-                        {currency.symbol}
-                        {item.price}
+                        {formatCartItemPrice(item.price, meta.discountActive, currency.symbol)}
                       </span>
                     </div>
                     {expiresLabel && (

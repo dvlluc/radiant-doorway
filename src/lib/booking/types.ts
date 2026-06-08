@@ -11,6 +11,7 @@ export interface BookingCartItemData {
   styleName?: string;
   stylePhoto?: string | null;
   itemKind?: BookingCartItemKind;
+  discountActive?: boolean;
   appointmentId?: string;
   bookedAt?: string;
 }

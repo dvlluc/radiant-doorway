@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getCartItemPrice } from "@/lib/servicePrice";
 import type { BookingCartItemData } from "./types";
 
 export const CART_TTL_HOURS = 24;
@@ -58,6 +59,7 @@ export async function addServiceToCart(
     duration: number;
     description?: string | null;
     image_url?: string | null;
+    discount_active?: boolean;
   },
   business: { id: string; name?: string },
   extra?: Partial<BookingCartItemData>
@@ -74,15 +76,18 @@ export async function addServiceToCart(
     duration: service.duration,
     description: service.description,
     itemKind: "service",
+    discountActive: service.discount_active,
     ...extra,
   };
+
+  const normalizedPrice = getCartItemPrice(service.price, service.discount_active);
 
   const { error } = await supabase.from("cart_items").insert({
     user_id: userId,
     product_id: service.id,
     product_name: service.name,
     product_image: service.image_url || extra?.stylePhoto || null,
-    price: service.price,
+    price: normalizedPrice,
     quantity: 1,
     expires_at: getCartExpiresAt(),
     item_type: "booking",
