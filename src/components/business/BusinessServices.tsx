@@ -10,6 +10,7 @@ import { getCurrencyFromLocation } from "@/utils/currency";
 import { ServiceFormDialog, type ServiceFormService } from "./ServiceFormDialog";
 import { ServiceCardPhoto, ServicePhotosPreviewDialog } from "./ServicePhotosPreview";
 import { getServicePhotoUrls } from "@/lib/servicePhotos";
+import { roundDiscountedPrice, formatDiscountedServicePrice } from "@/lib/servicePrice";
 
 interface Service extends ServiceFormService {
   is_active: boolean;
@@ -187,7 +188,7 @@ export const BusinessServices = () => {
         ? selectedService.original_price 
         : selectedService.price;
       
-      const discountedPrice = currentPrice! * (1 - discountValue / 100);
+      const discountedPrice = roundDiscountedPrice(currentPrice! * (1 - discountValue / 100));
 
       const { error } = await supabase
         .from("services")
@@ -324,10 +325,10 @@ export const BusinessServices = () => {
                   {service.discount_active && service.original_price ? (
                     <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                       <span className="line-through text-muted-foreground">
-                        {currency.symbol}{service.original_price.toFixed(2)}
+                        {formatDiscountedServicePrice(service.original_price, currency.symbol)}
                       </span>
                       <span className="font-semibold text-accent">
-                        {currency.symbol}{service.price.toFixed(2)}
+                        {formatDiscountedServicePrice(service.price, currency.symbol)}
                       </span>
                       <span className="text-[10px] sm:text-xs bg-accent/20 text-accent px-1.5 sm:px-2 py-0.5 rounded">
                         {service.discount_percentage}% OFF
@@ -432,17 +433,21 @@ export const BusinessServices = () => {
                 <p className="text-sm font-medium mb-1">Preview:</p>
                 <div className="flex items-center gap-2">
                   <span className="line-through text-muted-foreground">
-                    {selectedService.currency_symbol || currency.symbol}
-                    {(selectedService.discount_active 
-                      ? selectedService.original_price! 
-                      : selectedService.price).toFixed(2)}
+                    {formatDiscountedServicePrice(
+                      selectedService.discount_active
+                        ? selectedService.original_price!
+                        : selectedService.price,
+                      selectedService.currency_symbol || currency.symbol
+                    )}
                   </span>
                   <span className="font-semibold text-accent">
-                    {selectedService.currency_symbol || currency.symbol}
-                    {((selectedService.discount_active 
-                      ? selectedService.original_price! 
-                      : selectedService.price) * 
-                    (1 - parseFloat(discountPercentage) / 100)).toFixed(2)}
+                    {formatDiscountedServicePrice(
+                      (selectedService.discount_active
+                        ? selectedService.original_price!
+                        : selectedService.price) *
+                        (1 - parseFloat(discountPercentage) / 100),
+                      selectedService.currency_symbol || currency.symbol
+                    )}
                   </span>
                 </div>
               </div>

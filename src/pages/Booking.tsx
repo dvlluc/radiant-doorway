@@ -11,6 +11,7 @@ import { useSmartBack } from "@/hooks/useSmartBack";
 import { addServiceToCart, isCartDuplicateError } from "@/lib/booking/cart";
 import { useBookingCart, useInvalidateBookingCart } from "@/hooks/useBookingCart";
 import { Badge } from "@/components/ui/badge";
+import { formatDiscountedServicePrice } from "@/lib/servicePrice";
 
 interface Service {
   id: string;
@@ -398,10 +399,10 @@ export default function Booking() {
               {service.discount_active && service.original_price ? (
                 <div className="flex flex-col items-end">
                   <span className="text-xs text-muted-foreground line-through">
-                    {currency.symbol}{Number(service.original_price).toFixed(0)}
+                    {formatDiscountedServicePrice(service.original_price, currency.symbol)}
                   </span>
                   <span className="text-lg font-bold text-accent">
-                    {currency.symbol}{Number(service.price).toFixed(0)}
+                    {formatDiscountedServicePrice(service.price, currency.symbol)}
                   </span>
                 </div>
               ) : (

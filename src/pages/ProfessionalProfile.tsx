@@ -22,6 +22,7 @@ import { InviteProfessionalDialog } from "@/components/business/InviteProfession
 import { ServiceFormDialog } from "@/components/business/ServiceFormDialog";
 import { ServiceCardPhoto, ServicePhotosPreviewDialog } from "@/components/business/ServicePhotosPreview";
 import { getServicePhotoUrls } from "@/lib/servicePhotos";
+import { formatDiscountedServicePrice } from "@/lib/servicePrice";
 import { ProfileStylesTab } from "@/components/profile/ProfileStylesTab";
 import { formatDate } from "@/utils/dateFormat";
 import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
@@ -1800,10 +1801,10 @@ export default function ProfessionalProfile() {
                               {service.discount_active && service.original_price ? (
                                 <div>
                                   <span className="text-xs text-muted-foreground line-through block">
-                                    {service.currency_symbol || '£'}{service.original_price}
+                                    {formatDiscountedServicePrice(service.original_price, service.currency_symbol || "£")}
                                   </span>
                                   <span className="font-bold text-primary">
-                                    {service.currency_symbol || '£'}{service.price}
+                                    {formatDiscountedServicePrice(service.price, service.currency_symbol || "£")}
                                   </span>
                                 </div>
                               ) : (
