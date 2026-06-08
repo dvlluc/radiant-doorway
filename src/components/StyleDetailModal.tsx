@@ -333,11 +333,9 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{professional.business_name}</p>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{professional.address}</span>
-                      </div>
+                    <div className="flex items-start gap-1 text-xs text-muted-foreground">
+                      <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span className="break-words">{professional.address}</span>
                     </div>
                     {avgRating > 0 && (
                       <div className="mt-0.5 flex items-center gap-1">

@@ -230,9 +230,9 @@ export default function StyleDetail() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm truncate">{professional.business_name}</p>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{professional.address}</span>
+                    <div className="flex items-start gap-1 text-xs text-muted-foreground">
+                      <MapPin className="mt-0.5 w-3 h-3 shrink-0" />
+                      <span className="break-words">{professional.address}</span>
                     </div>
                     {avgRating > 0 && (
                       <div className="flex items-center gap-1 mt-0.5">
