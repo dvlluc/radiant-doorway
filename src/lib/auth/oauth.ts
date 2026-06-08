@@ -288,3 +288,19 @@ export async function resolveOAuthSignupRedirect(
 
   return storedRedirect || defaultRedirect || "/explore-styles";
 }
+
+export function getUserAuthProviders(user: User | null): string[] {
+  return user?.identities?.map((identity) => identity.provider) ?? [];
+}
+
+export function usesGoogleSignIn(user: User | null): boolean {
+  return getUserAuthProviders(user).includes("google");
+}
+
+export function hasEmailPasswordIdentity(user: User | null): boolean {
+  return getUserAuthProviders(user).includes("email");
+}
+
+export function isGoogleOnlyUser(user: User | null): boolean {
+  return usesGoogleSignIn(user) && !hasEmailPasswordIdentity(user);
+}
