@@ -61,7 +61,6 @@ export const BusinessPhotos = () => {
   const [formName, setFormName] = useState("");
   const [formCategory, setFormCategory] = useState("hair");
   const [formDescription, setFormDescription] = useState("");
-  const [formServicesRequired, setFormServicesRequired] = useState("");
   const [formEstimatedTime, setFormEstimatedTime] = useState("");
   const [formEstimatedPrice, setFormEstimatedPrice] = useState("");
   const [formPhotoFile, setFormPhotoFile] = useState<File | null>(null);
@@ -173,7 +172,6 @@ export const BusinessPhotos = () => {
     setFormName("");
     setFormCategory("hair");
     setFormDescription("");
-    setFormServicesRequired("");
     setFormEstimatedTime("");
     setFormEstimatedPrice("");
     setFormPhotoFile(null);
@@ -188,7 +186,6 @@ export const BusinessPhotos = () => {
     setFormName(style.style_name);
     setFormCategory(style.category);
     setFormDescription(style.description || "");
-    setFormServicesRequired(style.services_required.join(", "));
     setFormEstimatedTime(style.estimated_time?.toString() || "");
     setFormEstimatedPrice(style.estimated_price?.toString() || "");
     setFormPhotoPreview(style.photo_url);
@@ -236,7 +233,7 @@ export const BusinessPhotos = () => {
 
     const { data: biz } = await supabase
       .from("business_profiles")
-      .select("address")
+      .select("address, business_name")
       .eq("user_id", user.id)
       .single();
 
@@ -247,7 +244,7 @@ export const BusinessPhotos = () => {
         category: formCategory,
         photo_url: photoUrl,
         description: formDescription.trim() || null,
-        services_required: formServicesRequired.split(",").map(s => s.trim()).filter(Boolean),
+        services_required: biz?.business_name ? [biz.business_name] : [],
         estimated_time: formEstimatedTime ? parseInt(formEstimatedTime) : null,
         estimated_price: formEstimatedPrice ? parseFloat(formEstimatedPrice) : null,
         location: biz?.address || null,
@@ -450,11 +447,6 @@ export const BusinessPhotos = () => {
                   <div className="space-y-2">
                     <Label>Description</Label>
                     <Textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="Describe this style..." rows={3} />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Style By</Label>
-                    <Input value={formServicesRequired} onChange={e => setFormServicesRequired(e.target.value)} placeholder="e.g. Salon name or stylist name" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">

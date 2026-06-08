@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { ShareDialog } from "@/components/ShareDialog";
 import { RatingBreakdown } from "@/components/RatingBreakdown";
 import { InviteProfessionalDialog } from "@/components/business/InviteProfessionalDialog";
+import { ServiceFormDialog } from "@/components/business/ServiceFormDialog";
 import { ProfileStylesTab } from "@/components/profile/ProfileStylesTab";
 import { formatDate } from "@/utils/dateFormat";
 import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
@@ -285,46 +286,7 @@ export default function ProfessionalProfile() {
     }
   };
 
-  // Add Service state
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
-  const [serviceSubmitting, setServiceSubmitting] = useState(false);
-  const [serviceForm, setServiceForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    duration: "",
-    currency_symbol: "£",
-  });
-
-  const handleAddService = async () => {
-    if (!currentUserId || !serviceForm.name.trim() || !serviceForm.price || !serviceForm.duration) {
-      toast({ title: "Please fill in all required fields", variant: "destructive" });
-      return;
-    }
-    setServiceSubmitting(true);
-    try {
-      const { error } = await supabase.from("services").insert({
-        user_id: currentUserId,
-        name: serviceForm.name.trim(),
-        description: serviceForm.description.trim() || null,
-        price: parseFloat(serviceForm.price),
-        duration: parseInt(serviceForm.duration),
-        currency_symbol: serviceForm.currency_symbol,
-        is_active: true,
-      });
-      if (error) throw error;
-
-      await fetchBusinessServices();
-      setServiceDialogOpen(false);
-      setServiceForm({ name: "", description: "", price: "", duration: "", currency_symbol: "£" });
-      toast({ title: "Service added", description: "Your new service is now listed." });
-    } catch (error) {
-      console.error("Error adding service:", error);
-      toast({ title: "Failed to add service", variant: "destructive" });
-    } finally {
-      setServiceSubmitting(false);
-    }
-  };
 
   // Team invite state
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -1688,7 +1650,7 @@ export default function ProfessionalProfile() {
                   <p className="text-sm text-muted-foreground">
                     Your first team member is free. To add more team members, you need an active booking subscription.
                   </p>
-                  <Button className="w-full" onClick={() => { setUpgradeDialogOpen(false); navigate("/account", { state: { section: "Purchases & Subscriptions" } }); }}>
+                  <Button className="w-full" onClick={() => { setUpgradeDialogOpen(false); navigate("/account?tab=subscriptions"); }}>
                     View Subscription Plans
                   </Button>
                 </div>
@@ -1761,10 +1723,7 @@ export default function ProfessionalProfile() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setServiceForm({ name: "", description: "", price: "", duration: "", currency_symbol: "£" });
-                      setServiceDialogOpen(true);
-                    }}
+                    onClick={() => setServiceDialogOpen(true)}
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Service
@@ -1772,75 +1731,11 @@ export default function ProfessionalProfile() {
                 )}
               </div>
 
-              {/* Add Service Dialog */}
-              <Dialog open={serviceDialogOpen} onOpenChange={setServiceDialogOpen}>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add New Service</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="service-name">Service Name *</Label>
-                      <Input
-                        id="service-name"
-                        placeholder="e.g. Haircut, Manicure..."
-                        value={serviceForm.name}
-                        onChange={(e) => setServiceForm(f => ({ ...f, name: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="service-desc">Description</Label>
-                      <Textarea
-                        id="service-desc"
-                        placeholder="Describe this service..."
-                        value={serviceForm.description}
-                        onChange={(e) => setServiceForm(f => ({ ...f, description: e.target.value }))}
-                        className="resize-none"
-                        rows={2}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="service-price">Price ({serviceForm.currency_symbol}) *</Label>
-                        <Input
-                          id="service-price"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={serviceForm.price}
-                          onChange={(e) => setServiceForm(f => ({ ...f, price: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="service-duration">Duration (min) *</Label>
-                        <Input
-                          id="service-duration"
-                          type="number"
-                          min="1"
-                          placeholder="30"
-                          value={serviceForm.duration}
-                          onChange={(e) => setServiceForm(f => ({ ...f, duration: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    <Button
-                      className="w-full"
-                      disabled={!serviceForm.name.trim() || !serviceForm.price || !serviceForm.duration || serviceSubmitting}
-                      onClick={handleAddService}
-                    >
-                      {serviceSubmitting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Adding...
-                        </>
-                      ) : (
-                        "Add Service"
-                      )}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <ServiceFormDialog
+                open={serviceDialogOpen}
+                onOpenChange={setServiceDialogOpen}
+                onSaved={fetchBusinessServices}
+              />
 
               {loadingServices ? (
                 <div className="text-center py-12">

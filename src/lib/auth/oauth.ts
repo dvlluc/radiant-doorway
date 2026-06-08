@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { accountTabPath } from "@/lib/accountTabs";
 
 export type OAuthAccountType = "individual" | "business";
 type OAuthFlow = "signup" | "signin";
@@ -230,6 +231,10 @@ export async function resolveSignInRedirect(
   const storedRedirect = sessionStorage.getItem("oauth_redirect");
   sessionStorage.removeItem("oauth_redirect");
 
+  if (storedRedirect || defaultRedirect) {
+    return storedRedirect || defaultRedirect!;
+  }
+
   const { data: role } = await supabase
     .from("user_roles")
     .select("account_type")
@@ -237,18 +242,10 @@ export async function resolveSignInRedirect(
     .maybeSingle();
 
   if (role?.account_type === "business") {
-    const { data: businessProfile } = await supabase
-      .from("business_profiles")
-      .select("business_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!businessProfile?.business_name) {
-      return storedRedirect || "/profile-completion";
-    }
+    return accountTabPath("overview");
   }
 
-  return storedRedirect || defaultRedirect || "/explore-styles";
+  return "/explore-styles";
 }
 
 /** Google OAuth callback — registration flow. */

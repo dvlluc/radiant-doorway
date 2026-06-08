@@ -31,23 +31,12 @@ import { TeamMemberPage } from "@/components/TeamMemberPage";
 import { PurchasesSubscriptions } from "@/components/PurchasesSubscriptions";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-
-type MenuSection =
-  | "Home" 
-  | "Overview" 
-  | "Personal Information"
-  | "Brand Information"
-  | "Business Information"
-  | "Charity Information"
-  | "Account Settings" 
-  | "Notifications"
-  | "My Bookings" 
-  | "Bookings"
-  | "Purchases & Subscriptions" 
-  | "Business Management"
-  
-  | "Followers"
-  | "Team Member";
+import {
+  type MenuSection,
+  tabToSection,
+  sectionToTab,
+  accountTabPath,
+} from "@/lib/accountTabs";
 
 const individualMenuItems: MenuSection[] = [
   "Home",
@@ -291,37 +280,31 @@ export default function Account() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check if we need to navigate to a specific section from state or query params
   useEffect(() => {
-    // Check URL query parameters first
     const params = new URLSearchParams(location.search);
-    const tabParam = params.get('tab');
-    
+    const tabParam = params.get("tab");
+
     if (tabParam) {
-      // Map tab parameter to MenuSection
-      const sectionMap: Record<string, MenuSection> = {
-        'notifications': 'Notifications',
-        
-        'settings': 'Account Settings',
-        'followers': 'Followers',
-        'bookings': 'My Bookings',
-        'business-bookings': 'Bookings',
-      };
-      
-      const section = sectionMap[tabParam.toLowerCase()];
+      const section = tabToSection(tabParam);
       if (section) {
         setActiveSection(section);
       }
-    } else {
-      // Fall back to location state
-      const state = location.state as { activeSection?: MenuSection };
-      if (state?.activeSection) {
-        setActiveSection(state.activeSection);
-        // Clear the state so it doesn't persist
-        window.history.replaceState({}, document.title);
+      return;
+    }
+
+    const state = location.state as {
+      activeSection?: MenuSection;
+      section?: MenuSection;
+    };
+    const stateSection = state?.activeSection ?? state?.section;
+    if (stateSection) {
+      setActiveSection(stateSection);
+      const tab = sectionToTab(stateSection);
+      if (tab) {
+        navigate(accountTabPath(tab), { replace: true, state: null });
       }
     }
-  }, [location.search, location.state]);
+  }, [location.search, location.state, navigate]);
 
   // Listen for team membership changes
   useEffect(() => {
@@ -519,8 +502,13 @@ export default function Account() {
     (section: MenuSection) => {
       if (section === "Home") {
         navigate("/explore-styles");
-      } else {
-        setActiveSection(section);
+        return;
+      }
+
+      setActiveSection(section);
+      const tab = sectionToTab(section);
+      if (tab) {
+        navigate(accountTabPath(tab), { replace: true });
       }
     },
     [navigate],
@@ -680,7 +668,7 @@ export default function Account() {
 
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setActiveSection("Notifications")}
+              onClick={() => handleSectionSelect("Notifications")}
             >
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start justify-between">

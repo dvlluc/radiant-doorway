@@ -3,13 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { BusinessCategoryMultiSelect } from "@/components/BusinessCategoryMultiSelect";
+import { formatBusinessCategories } from "@/lib/businessCategories";
 import { User, Briefcase, ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -64,26 +59,11 @@ const signupIndividualSchema = authBaseSchema.extend({
 const signupBusinessSchema = authBaseSchema.extend({
   telephone: z.string().trim().min(1, { message: "Telephone number is required" }),
   businessName: z.string().trim().min(1, { message: "Business name is required" }),
-  businessCategory: z.string().trim().min(1, { message: "Business category is required" }),
+  businessCategories: z.array(z.string()).min(1, { message: "Select at least one business category" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
-
-const BUSINESS_CATEGORIES = [
-  "Salons",
-  "Nails",
-  "Skin",
-  "Makeup",
-  "Barbers",
-  "Spa",
-  "Hair Braiding",
-  "Lashes",
-  "Brows",
-  "Aesthetics",
-  "Massage",
-  "Waxing",
-];
 
 type AccountType = "individual" | "business";
 
@@ -132,7 +112,7 @@ export default function Auth() {
   const [lastName, setLastName] = useState("");
   const [telephone, setTelephone] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [businessCategory, setBusinessCategory] = useState("");
+  const [businessCategories, setBusinessCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -224,7 +204,7 @@ export default function Auth() {
     firstName: accountType === "individual" ? firstName : undefined,
     lastName: accountType === "individual" ? lastName : undefined,
     businessName: accountType === "business" ? businessName : undefined,
-    businessCategory: accountType === "business" ? businessCategory : undefined,
+    businessCategories: accountType === "business" ? businessCategories : undefined,
   });
 
   const validateSignupForm = () => {
@@ -249,7 +229,7 @@ export default function Auth() {
           telephone: formatPhoneForTwilio(telephone),
           account_type: accountType,
           business_name: accountType === "business" ? businessName : undefined,
-          business_category: accountType === "business" ? businessCategory : undefined,
+          business_category: accountType === "business" ? formatBusinessCategories(businessCategories) ?? undefined : undefined,
         },
       },
     });
@@ -550,23 +530,19 @@ export default function Auth() {
   );
 
   const businessFormFields = (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="businessName" className="text-sm font-medium">Name of Business <span className="text-destructive">*</span></label>
         <Input id="businessName" type="text" placeholder="Enter business name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="h-11" required disabled={loading} />
       </div>
       <div className="space-y-2">
         <label htmlFor="businessCategory" className="text-sm font-medium">Business Category <span className="text-destructive">*</span></label>
-        <Select value={businessCategory} onValueChange={setBusinessCategory} disabled={loading}>
-          <SelectTrigger id="businessCategory" className="h-11">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {BUSINESS_CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <BusinessCategoryMultiSelect
+          id="businessCategory"
+          value={businessCategories}
+          onChange={setBusinessCategories}
+          disabled={loading}
+        />
       </div>
     </div>
   );

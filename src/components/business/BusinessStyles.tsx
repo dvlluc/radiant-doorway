@@ -45,7 +45,6 @@ export function BusinessStyles() {
   const [styleName, setStyleName] = useState("");
   const [category, setCategory] = useState("hair");
   const [description, setDescription] = useState("");
-  const [servicesRequired, setServicesRequired] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
   const [estimatedPrice, setEstimatedPrice] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -71,7 +70,6 @@ export function BusinessStyles() {
     setStyleName("");
     setCategory("hair");
     setDescription("");
-    setServicesRequired("");
     setEstimatedTime("");
     setEstimatedPrice("");
     setPhotoFile(null);
@@ -84,7 +82,6 @@ export function BusinessStyles() {
     setStyleName(style.style_name);
     setCategory(style.category);
     setDescription(style.description || "");
-    setServicesRequired(style.services_required.join(", "));
     setEstimatedTime(style.estimated_time?.toString() || "");
     setEstimatedPrice(style.estimated_price?.toString() || "");
     setPhotoPreview(style.photo_url);
@@ -127,7 +124,7 @@ export function BusinessStyles() {
     // Get business location
     const { data: biz } = await supabase
       .from("business_profiles")
-      .select("address")
+      .select("address, business_name")
       .eq("user_id", user.id)
       .single();
 
@@ -136,7 +133,7 @@ export function BusinessStyles() {
       category,
       photo_url: photoUrl,
       description: description.trim() || null,
-      services_required: servicesRequired.split(",").map(s => s.trim()).filter(Boolean),
+      services_required: biz?.business_name ? [biz.business_name] : [],
       estimated_time: estimatedTime ? parseInt(estimatedTime) : null,
       estimated_price: estimatedPrice ? parseFloat(estimatedPrice) : null,
       location: biz?.address || null,
@@ -238,11 +235,6 @@ export function BusinessStyles() {
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe this style..." rows={3} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Style By</Label>
-                <Input value={servicesRequired} onChange={e => setServicesRequired(e.target.value)} placeholder="e.g. Salon name or stylist name" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">

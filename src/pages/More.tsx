@@ -17,7 +17,7 @@ const More = () => {
       icon: Home,
       label: "Account Overview",
       description: "View your account dashboard",
-      onClick: () => navigate("/account"),
+      onClick: () => navigate("/account?tab=overview"),
     },
     {
       icon: User,
@@ -35,7 +35,7 @@ const More = () => {
       icon: Calendar,
       label: "Bookings",
       description: "Manage your appointments",
-      onClick: () => navigate("/account", { state: { section: "Bookings" } }),
+      onClick: () => navigate("/account?tab=business-bookings"),
     },
   ];
 
@@ -44,13 +44,13 @@ const More = () => {
       icon: CreditCard,
       label: "Purchases & Subscriptions",
       description: "Manage payments and plans",
-      onClick: () => navigate("/account", { state: { section: "Purchases & Subscriptions" } }),
+      onClick: () => navigate("/account?tab=subscriptions"),
     },
     {
       icon: Briefcase,
       label: "Business Management",
       description: "Manage your business settings",
-      onClick: () => navigate("/account", { state: { section: "Business Management" } }),
+      onClick: () => navigate("/account?tab=business-management"),
     },
   ];
 
@@ -71,7 +71,7 @@ const More = () => {
       icon: Settings,
       label: "Account Settings",
       description: "Manage your account preferences",
-      onClick: () => navigate("/account", { state: { section: "Account Settings" } }),
+      onClick: () => navigate("/account?tab=settings"),
     },
     {
       icon: HelpCircle,

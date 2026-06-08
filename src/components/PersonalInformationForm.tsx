@@ -9,28 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Save, User, Copy, Check } from "lucide-react";
 import { formatPhoneForTwilio, formatPhoneInput } from "@/utils/phoneFormat";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const BUSINESS_CATEGORIES = [
-  "Salons",
-  "Nails",
-  "Skin",
-  "Makeup",
-  "Barbers",
-  "Spa",
-  "Hair Braiding",
-  "Lashes",
-  "Brows",
-  "Aesthetics",
-  "Massage",
-  "Waxing",
-];
+import { BusinessCategoryMultiSelect } from "@/components/BusinessCategoryMultiSelect";
+import { formatBusinessCategories, parseBusinessCategories } from "@/lib/businessCategories";
 
 interface PersonalInformationFormProps {
   userId: string;
@@ -63,7 +43,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
     country: "",
     bio: "",
     website: "",
-    businessCategory: "",
+    businessCategories: [] as string[],
     businessHours: "",
     avatarUrl: ""
   });
@@ -87,7 +67,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
       let orgPhone = profile.telephone || "";
       let orgAddress = "";
       let orgWebsite = "";
-      let orgCategory = "";
+      let orgCategory: string[] = [];
       
       if (accountType === "charitable_partner") {
         const { data } = await supabase
@@ -130,7 +110,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
           orgPhone = data.telephone || orgPhone;
           orgAddress = data.address || "";
           orgWebsite = data.website || "";
-          orgCategory = data.category || "";
+          orgCategory = parseBusinessCategories(data.category);
           if (data.business_name) {
             const slug = data.business_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
             setBookingLink(`${window.location.origin}/booking/${slug}`);
@@ -171,7 +151,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
         country: parsedCountry,
         bio: profile.bio || "",
         website: orgWebsite,
-        businessCategory: orgCategory,
+        businessCategories: orgCategory,
         businessHours: "",
         avatarUrl: profile.avatar_url || ""
       });
@@ -318,7 +298,7 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
           .from("business_profiles")
           .update({
             business_name: formData.organizationName,
-            category: formData.businessCategory || null,
+            category: formatBusinessCategories(formData.businessCategories),
             first_name: formData.firstName,
             last_name: formData.lastName,
             telephone: formatPhoneForTwilio(formData.phoneNumber),
@@ -496,20 +476,12 @@ export function PersonalInformationForm({ userId, profile, accountType }: Person
           {accountType === "business" && (
             <div className="space-y-2">
               <Label htmlFor="businessCategory">Business Category</Label>
-              <Select
-                value={formData.businessCategory}
-                onValueChange={(value) => setFormData({ ...formData, businessCategory: value })}
+              <BusinessCategoryMultiSelect
+                id="businessCategory"
+                value={formData.businessCategories}
+                onChange={(businessCategories) => setFormData({ ...formData, businessCategories })}
                 disabled={!isEditMode}
-              >
-                <SelectTrigger id="businessCategory" className={!isEditMode ? "bg-muted" : ""}>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BUSINESS_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           )}
 
