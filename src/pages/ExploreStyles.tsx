@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Heart, Bookmark, BookmarkCheck, MapPin, Clock, Search, X, Star, Share2, User, Scissors, SlidersHorizontal, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { getCurrencyFromLocation } from "@/utils/currency";
@@ -13,6 +12,8 @@ import { StyleDetailModal } from "@/components/StyleDetailModal";
 import { ShareDialog } from "@/components/ShareDialog";
 import { MobileNav } from "@/components/MobileNav";
 import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
+import { StyleCategoriesBadge } from "@/components/StyleCategoriesBadge";
+import { styleMatchesCategory } from "@/lib/styleCategories";
 
 interface Style {
   id: string;
@@ -85,9 +86,10 @@ const StyleCard = memo(({ style, isSaved, onSave, onNavigate, onShare, horizonta
         >
           <Heart className={`w-4 h-4 ${isSaved ? "fill-primary text-primary" : "text-foreground"}`} />
         </button>
-        <Badge className="hidden sm:inline-flex absolute top-3 left-3 bg-background/90 text-foreground text-[10px] uppercase tracking-wider border-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          {style.category}
-        </Badge>
+        <StyleCategoriesBadge
+          category={style.category}
+          className="hidden sm:flex absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity"
+        />
         <button
           onClick={(e) => { e.stopPropagation(); onShare(style.id, style.style_name); }}
           className="hidden sm:block absolute top-3 right-12 p-2 rounded-full bg-background/90 hover:bg-background transition-all opacity-0 group-hover:opacity-100"
@@ -175,22 +177,25 @@ export default function ExploreStyles() {
 
   const fetchStyles = async () => {
     setLoading(true);
-    let query = supabase.from("styles").select("*").order("created_at", { ascending: false });
-    if (activeCategory !== "all") {
-      query = query.eq("category", activeCategory);
-    }
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .from("styles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
     if (error) {
       console.error(error);
       setLoading(false);
       return;
     }
 
-    // Fetch professional names
-    const professionalIds = [...new Set((data || []).map(s => s.professional_id))];
+    const categoryFiltered = (data || []).filter((style) =>
+      styleMatchesCategory(style.category, activeCategory)
+    );
+
+    const professionalIds = [...new Set(categoryFiltered.map((s) => s.professional_id))];
     let profileMap: Record<string, { name: string; avatar: string | null }> = {};
     let reviewMap: Record<string, { avg: number; count: number }> = {};
-    
+
     if (professionalIds.length > 0) {
       const [bizResult, reviewResult] = await Promise.all([
         supabase
@@ -202,13 +207,12 @@ export default function ExploreStyles() {
           .select("business_id, rating")
           .in("business_id", professionalIds),
       ]);
-      
-      (bizResult.data || []).forEach(bp => {
+
+      (bizResult.data || []).forEach((bp) => {
         profileMap[bp.user_id] = { name: bp.business_name, avatar: bp.avatar_url };
       });
 
-      // Aggregate reviews per professional
-      (reviewResult.data || []).forEach(r => {
+      (reviewResult.data || []).forEach((r) => {
         if (!r.business_id) return;
         if (!reviewMap[r.business_id]) {
           reviewMap[r.business_id] = { avg: 0, count: 0 };
@@ -216,12 +220,12 @@ export default function ExploreStyles() {
         reviewMap[r.business_id].count++;
         reviewMap[r.business_id].avg += r.rating;
       });
-      Object.keys(reviewMap).forEach(id => {
+      Object.keys(reviewMap).forEach((id) => {
         reviewMap[id].avg = reviewMap[id].avg / reviewMap[id].count;
       });
     }
 
-    const enriched = (data || []).map(s => ({
+    const enriched = categoryFiltered.map((s) => ({
       ...s,
       professional_name: profileMap[s.professional_id]?.name,
       avatar_url: profileMap[s.professional_id]?.avatar,

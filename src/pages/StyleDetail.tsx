@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Clock, MapPin, Star, Bookmark, BookmarkCheck, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StyleCategoriesBadge } from "@/components/StyleCategoriesBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -190,9 +191,10 @@ export default function StyleDetail() {
               alt={style.style_name}
               className="w-full object-cover max-h-[500px] md:max-h-[600px]"
             />
-            <Badge className="absolute top-4 left-4 bg-background/90 text-foreground uppercase text-[10px] tracking-wider border-0">
-              {style.category}
-            </Badge>
+            <StyleCategoriesBadge
+              category={style.category}
+              className="absolute top-4 left-4"
+            />
           </div>
 
           {/* Details */}

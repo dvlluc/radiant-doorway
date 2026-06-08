@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { StyleCategoryMultiSelect } from "@/components/StyleCategoryMultiSelect";
+import { StyleCategoriesBadge } from "@/components/StyleCategoriesBadge";
+import { formatStyleCategories, parseStyleCategories } from "@/lib/styleCategories";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image as ImageIcon, Plus, Trash2, Edit2, Image } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Photo {
@@ -34,15 +35,6 @@ interface StyleItem {
   location: string | null;
 }
 
-const categoryOptions = [
-  { value: "hair", label: "Hairstyles" },
-  { value: "braids", label: "Braids" },
-  { value: "barber", label: "Barber" },
-  { value: "nails", label: "Nails" },
-  { value: "makeup", label: "Makeup" },
-  { value: "lashes", label: "Lashes" },
-];
-
 export const BusinessPhotos = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -59,7 +51,7 @@ export const BusinessPhotos = () => {
 
   // Form state
   const [formName, setFormName] = useState("");
-  const [formCategory, setFormCategory] = useState("hair");
+  const [formCategories, setFormCategories] = useState<string[]>(["hair"]);
   const [formDescription, setFormDescription] = useState("");
   const [formEstimatedTime, setFormEstimatedTime] = useState("");
   const [formEstimatedPrice, setFormEstimatedPrice] = useState("");
@@ -170,7 +162,7 @@ export const BusinessPhotos = () => {
   // === Unified style form ===
   const resetForm = () => {
     setFormName("");
-    setFormCategory("hair");
+    setFormCategories(["hair"]);
     setFormDescription("");
     setFormEstimatedTime("");
     setFormEstimatedPrice("");
@@ -184,7 +176,7 @@ export const BusinessPhotos = () => {
   const openEditStyle = (style: StyleItem) => {
     setEditingStyle(style);
     setFormName(style.style_name);
-    setFormCategory(style.category);
+    setFormCategories(parseStyleCategories(style.category));
     setFormDescription(style.description || "");
     setFormEstimatedTime(style.estimated_time?.toString() || "");
     setFormEstimatedPrice(style.estimated_price?.toString() || "");
@@ -210,6 +202,11 @@ export const BusinessPhotos = () => {
     }
     if (!displayOnProfile && !displayOnExplore) {
       toast({ title: "Please select at least one display location", variant: "destructive" });
+      return;
+    }
+
+    if (!formCategories.length) {
+      toast({ title: "Select at least one category", variant: "destructive" });
       return;
     }
 
@@ -241,7 +238,7 @@ export const BusinessPhotos = () => {
     if (displayOnExplore) {
       const payload = {
         style_name: formName.trim(),
-        category: formCategory,
+        category: formatStyleCategories(formCategories),
         photo_url: photoUrl,
         description: formDescription.trim() || null,
         services_required: biz?.business_name ? [biz.business_name] : [],
@@ -434,14 +431,10 @@ export const BusinessPhotos = () => {
 
                   <div className="space-y-2">
                     <Label>Category *</Label>
-                    <Select value={formCategory} onValueChange={setFormCategory}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {categoryOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <StyleCategoryMultiSelect
+                      value={formCategories}
+                      onChange={setFormCategories}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -519,9 +512,10 @@ export const BusinessPhotos = () => {
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                    <Badge className="absolute top-2 left-2 bg-background/90 text-foreground text-[9px] uppercase border-0">
-                      {style.category}
-                    </Badge>
+                    <StyleCategoriesBadge
+                      category={style.category}
+                      className="absolute top-2 left-2"
+                    />
                   </div>
                   <CardContent className="p-2.5">
                     <p className="text-xs font-medium truncate">{style.style_name}</p>

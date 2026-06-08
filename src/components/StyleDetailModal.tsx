@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Clock, MapPin, Star, Bookmark, BookmarkCheck, X, User, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StyleCategoriesBadge } from "@/components/StyleCategoriesBadge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -259,9 +259,11 @@ export function StyleDetailModal({ styleId, open, onOpenChange }: StyleDetailMod
                 <X className="h-4 w-4" />
               </button>
 
-              <Badge className="absolute left-3 top-3 border-0 bg-background/80 text-xs font-medium capitalize text-foreground backdrop-blur-sm">
-                {style.category}
-              </Badge>
+              <StyleCategoriesBadge
+                category={style.category}
+                className="absolute left-3 top-3"
+                badgeClassName="backdrop-blur-sm"
+              />
 
               <div className="absolute bottom-3 right-3 flex items-center gap-2">
                 <button

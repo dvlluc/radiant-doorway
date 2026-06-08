@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getCurrencyFromLocation } from "@/utils/currency";
 import { StyleDetailModal } from "@/components/StyleDetailModal";
 import { useCanBookAsCustomer } from "@/hooks/useCanBookAsCustomer";
+import { styleMatchesCategory } from "@/lib/styleCategories";
 
 interface Style {
   id: string;
@@ -109,7 +110,7 @@ export function ProfileStylesTab({ professionalId, isOwnProfile }: ProfileStyles
 
   const filteredStyles = activeCategory === "all"
     ? styles
-    : styles.filter((s) => s.category.toLowerCase() === activeCategory);
+    : styles.filter((s) => styleMatchesCategory(s.category, activeCategory));
 
   const formatDuration = (mins: number) => {
     if (mins >= 60) {
