@@ -1749,14 +1749,41 @@ export default function ProfessionalProfile() {
                 </Card>
               ) : (
                 <div className="space-y-3">
-                  {businessServices.map((service) => (
-                    <Card key={service.id} className="hover:shadow-md transition-shadow">
+                  {businessServices.map((service) => {
+                    const servicePhotos = service.image_urls?.length
+                      ? service.image_urls
+                      : service.image_url
+                        ? [service.image_url]
+                        : [];
+
+                    return (
+                    <Card key={service.id} className="hover:shadow-md transition-shadow overflow-hidden">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          {servicePhotos.length > 0 && (
+                            <div className="relative shrink-0">
+                              <img
+                                src={servicePhotos[0]}
+                                alt={service.name}
+                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover"
+                              />
+                              {servicePhotos.length > 1 && (
+                                <span className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                                  +{servicePhotos.length - 1}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex flex-1 min-w-0 items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold">{service.name}</h4>
                             {service.description && (
-                              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{service.description}</p>
+                              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{service.description}</p>
+                            )}
+                            {service.requirements && (
+                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                <span className="font-medium text-foreground">Requirements:</span> {service.requirements}
+                              </p>
                             )}
                             <span className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                               <Clock className="h-3 w-3" />
@@ -1789,10 +1816,12 @@ export default function ProfessionalProfile() {
                               </Button>
                             )}
                           </div>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
